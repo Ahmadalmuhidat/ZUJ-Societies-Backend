@@ -2,7 +2,17 @@ const pool = require("../config/database");
 
 exports.get_posts = async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT ID, Content, Likes, Comments, User FROM Posts");
+    const sql_query = `
+      SELECT
+        ID,
+        Content,
+        Likes,
+        Comments,
+        User
+      FROM
+        Posts
+    `;
+    const [rows] = await pool.query(sql_query);
     res.status(200).json({ data: rows });
   } catch (err) {
     console.error(err);
@@ -12,10 +22,27 @@ exports.get_posts = async (req, res) => {
 
 exports.create_post = async (req, res) => {
   try {
-    const sqlQuery = "INSERT INTO Posts VALUES (?, ?, ?, ?, ?)";
-    const data = [req.body.id, req.body.content, req.body.likes, req.body.comments, req.body.user];
+    const sql_query = `
+      INSERT INTO
+        Posts
+      VALUES
+      (
+        ?,
+        ?,
+        ?,
+        ?,
+        ?
+      )
+    `;
+    const data = [
+      req.body.id,
+      req.body.content,
+      req.body.likes,
+      req.body.comments,
+      req.body.user
+    ];
 
-    const [results] = await pool.query(sqlQuery, data);
+    const [results] = await pool.query(sql_query, data);
     res.status(201).json({ data: results });
   } catch (err) {
     console.error(err);
@@ -25,15 +52,20 @@ exports.create_post = async (req, res) => {
 
 exports.get_posts_by_society = async (req, res) => {
   try {
-    const societyId = req.params.society_id;
-
-    const sqlQuery = "SELECT ID, Content, Likes, Comments, User FROM Posts WHERE Society = ?";
-    const data = [societyId];
-    const [rows] = await pool.query(sqlQuery, data);
-    
-    if (rows.length === 0) {
-      return res.status(404).json({ error_message: "No posts found for this society" });
-    }
+    const sql_query = `
+      SELECT
+        ID,
+        Content,
+        Likes,
+        Comments,
+        User
+      FROM
+        Posts
+      WHERE
+        Society = ?
+    `;
+    const data = [req.params.society_id];
+    const [rows] = await pool.query(sql_query, data);
 
     res.status(200).json({ data: rows });
   } catch (err) {

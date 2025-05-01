@@ -1,10 +1,21 @@
 const pool = require("../config/database");
 
 exports.get_comments = async (req, res) => {
-  const post_id = req.params.post_id;
-
   try {
-    const [rows] = await pool.query("SELECT ID, Content, Post, User FROM Comments WHERE Post = ?", [post_id]);
+    const sql_query = `
+      SELECT
+        ID,
+        Content,
+        Post,
+        User
+      FROM
+        Comments
+      WHERE
+        Post = ?
+    `;
+    const data = [req.params.post_id];
+
+    const [rows] = await pool.query(sql_query, data);
     res.status(200).json({ data: rows });
   } catch (err) {
     console.error(err);
@@ -13,11 +24,26 @@ exports.get_comments = async (req, res) => {
 };
 
 exports.create_comment = async (req, res) => {
-  const sqlQuery = "INSERT INTO Comments (ID, Content, Post, User) VALUES (?, ?, ?, ?)";
-  const data = [req.body.id, req.body.content, req.body.post, req.body.user];
-
   try {
-    const [results] = await pool.query(sqlQuery, data);
+    const sql_query = `
+      INSERT INTO
+        Comments
+      VALUES
+      (
+        ?,
+        ?,
+        ?,
+        ?
+      )
+    `;
+    const data = [
+      req.body.id,
+      req.body.content,
+      req.body.post,
+      req.body.user
+    ];
+
+    const [results] = await pool.query(sql_query, data);
     res.status(201).json({ data: results });
   } catch (err) {
     console.error(err);
@@ -26,14 +52,20 @@ exports.create_comment = async (req, res) => {
 };
 
 exports.get_comments_by_post = async (req, res) => {
-  const post_id = req.params.post_id;
-
   try {
-    const [rows] = await pool.query("SELECT ID, Content, Post, User FROM Comments WHERE Post = ?", [post_id]);
-    
-    if (rows.length === 0) {
-      return res.status(404).json({ error_message: "No comments found for this post" });
-    }
+    const sql_query = `
+      SELECT
+        ID,
+        Content,
+        Post,
+        User
+      FROM
+        Comments
+      WHERE
+        Post = ?
+    `;
+    const data = [req.params.post_id];
+    const [rows] = await pool.query(sql_query, data);
 
     res.status(200).json({ data: rows });
   } catch (err) {

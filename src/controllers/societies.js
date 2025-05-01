@@ -2,7 +2,16 @@ const pool = require("../config/database");
 
 exports.get_societies = async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT ID, Name, Description, User FROM Societies");
+    const sql_query = `
+      SELECT
+        ID,
+        Name,
+        Description,
+        User
+      FROM
+        Societies
+    `;
+    const [rows] = await pool.query(sql_query);
     res.status(200).json({ data: rows });
   } catch (err) {
     console.error(err);
@@ -12,12 +21,27 @@ exports.get_societies = async (req, res) => {
 
 exports.create_society = async (req, res) => {
   try {
-    const sqlQuery = "INSERT INTO Societies VALUES (?, ?, ?, ?)";
-    const data = [req.body.id, req.body.name, req.body.description, req.body.user];
+    const sql_query = `
+      INSERT INTO
+        Societies
+      VALUES
+      (
+        ?,
+        ?,
+        ?,
+        ?
+      )
+    `;
+    const data = [
+      req.body.id,
+      req.body.name,
+      req.body.description,
+      req.body.user
+    ];
 
     // insert as member
 
-    const [results] = await pool.query(sqlQuery, data);
+    const [results] = await pool.query(sql_query, data);
     res.status(201).json({ data: results });
   } catch (err) {
     console.error(err);
@@ -27,9 +51,19 @@ exports.create_society = async (req, res) => {
 
 exports.get_societies_by_user = async (req, res) => {
   try {
-    const userId = req.params.user_id;
-
-    const [rows] = await pool.query("SELECT ID, Name, Description, User FROM Societies WHERE User = ?", [userId]);
+    const sql_query = `
+      SELECT
+        ID,
+        Name,
+        Description,
+        User
+      FROM
+        Societies
+      WHERE
+        User = ?
+    `;
+    const data = [req.params.user_id];
+    const [rows] = await pool.query(sql_query, data);
     res.status(200).json({ data: rows });
   } catch (err) {
     console.error(err);
@@ -39,13 +73,19 @@ exports.get_societies_by_user = async (req, res) => {
 
 exports.search_society = async (req, res) => {
   try {
-    const society_name = req.params.name;
-
-    const [rows] = await pool.query("SELECT ID, Name, Description, User FROM Societies WHERE ID = ?", [society_name]);
-    
-    if (rows.length === 0) {
-      return res.status(404).json({ error_message: "Society not found" });
-    }
+    const sql_query = `
+    SELECT
+      ID,
+      Name,
+      Description,
+      User
+    FROM
+      Societies
+    WHERE
+      ID = ?
+    `;
+    const data = [req.params.name];
+    const [rows] = await pool.query(sql_query, data);
 
     res.status(200).json({ data: rows[0] });
   } catch (err) {
@@ -56,10 +96,20 @@ exports.search_society = async (req, res) => {
 
 exports.join_society = async (req, res) => {
   try {
-    const sqlQuery = "INSERT INTO societies_join_requesties VALUES (?, ?, ?, ?)";
+    const sql_query = `
+    INSERT INTO
+      societies_join_requests
+    VALUES
+    (
+      ?,
+      ?,
+      ?,
+      ?
+    )
+    `;
     const data = ["id", req.body.society_id, req.body.user_id, "pending",];
 
-    const [results] = await pool.query(sqlQuery, data);
+    const [results] = await pool.query(sql_query, data);
     res.status(201).json({ data: results });
   } catch (err) {
     console.error(err);
@@ -69,10 +119,25 @@ exports.join_society = async (req, res) => {
 
 exports.invite_member = async (req, res) => {
   try {
-    const sqlQuery = "INSERT INTO societies_memebers VALUES (?, ?, ?, ?)";
-    const data = ["id", req.body.society_id, req.body.user_id, req.body.role,];
+    const sql_query = `
+    INSERT INTO
+      societies_members
+    VALUES
+    (
+      ?,
+      ?,
+      ?,
+      ?
+    )
+    `;
+    const data = [
+      "id",
+      req.body.society_id,
+      req.body.user_id,
+      req.body.role
+    ];
 
-    const [results] = await pool.query(sqlQuery, data);
+    const [results] = await pool.query(sql_query, data);
     res.status(201).json({ data: results });
   } catch (err) {
     console.error(err);
@@ -82,10 +147,20 @@ exports.invite_member = async (req, res) => {
 
 exports.remove_member = async (req, res) => {
   try {
-    const sqlQuery = "DELETE FROM societies_memebers WHERE User=? AND Society=?";
-    const data = [req.params.society_id, req.params.user_id];
+    const sql_query = `
+      DELETE FROM
+        societies_members
+      WHERE
+        User=?
+      AND
+        Society=?
+    `;
+    const data = [
+      req.params.society_id,
+      req.params.user_id
+    ];
 
-    const [results] = await pool.query(sqlQuery, data);
+    const [results] = await pool.query(sql_query, data);
     res.status(201).json({ data: results });
   } catch (err) {
     console.error(err);
