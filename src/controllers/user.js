@@ -13,7 +13,7 @@ exports.get_users = async (req, res) => {
 
 exports.create_user = async (req, res) => {
   try {
-    const sqlQuery = "INSERT INTO Users (Name, Email) VALUES (?, ?)";
+    const sqlQuery = "INSERT INTO Users VALUES (?, ?)";
     const data = [req.body.name, req.body.email];
 
     mailer.send_email(req.body.email, "welcone to zuj societies", "welcome");

@@ -20,5 +20,5 @@ const send_email = async (to, subject, text) => {
 };
 
 module.exports = {
-  send_email,
+  send_email
 };

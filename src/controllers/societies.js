@@ -12,8 +12,10 @@ exports.get_societies = async (req, res) => {
 
 exports.create_society = async (req, res) => {
   try {
-    const sqlQuery = "INSERT INTO Societies (ID, Name, Description, User) VALUES (?, ?, ?, ?)";
+    const sqlQuery = "INSERT INTO Societies VALUES (?, ?, ?, ?)";
     const data = [req.body.id, req.body.name, req.body.description, req.body.user];
+
+    // insert as member
 
     const [results] = await pool.query(sqlQuery, data);
     res.status(201).json({ data: results });
@@ -49,5 +51,44 @@ exports.search_society = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to get society" });
+  }
+};
+
+exports.join_society = async (req, res) => {
+  try {
+    const sqlQuery = "INSERT INTO societies_join_requesties VALUES (?, ?, ?, ?)";
+    const data = ["id", req.body.society_id, req.body.user_id, "pending",];
+
+    const [results] = await pool.query(sqlQuery, data);
+    res.status(201).json({ data: results });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error_message: "Failed to join society" });
+  }
+};
+
+exports.invite_member = async (req, res) => {
+  try {
+    const sqlQuery = "INSERT INTO societies_memebers VALUES (?, ?, ?, ?)";
+    const data = ["id", req.body.society_id, req.body.user_id, req.body.role,];
+
+    const [results] = await pool.query(sqlQuery, data);
+    res.status(201).json({ data: results });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error_message: "Failed to join society" });
+  }
+};
+
+exports.remove_member = async (req, res) => {
+  try {
+    const sqlQuery = "DELETE FROM societies_memebers WHERE User=? AND Society=?";
+    const data = [req.params.society_id, req.params.user_id];
+
+    const [results] = await pool.query(sqlQuery, data);
+    res.status(201).json({ data: results });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error_message: "Failed to join society" });
   }
 };

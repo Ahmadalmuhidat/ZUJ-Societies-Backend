@@ -11,8 +11,16 @@ exports.get_events = async (req, res) => {
 };
 
 exports.create_event = async (req, res) => {
-  const sqlQuery = "INSERT INTO Events (ID, Title, Description, Date, Time, User, Society) VALUES (?, ?, ?, ?, ?, ?, ?)";
-  const data = [req.body.id, req.body.title, req.body.description, req.body.date, req.body.time, req.body.user, req.body.society];
+  const sqlQuery = "INSERT INTO Events VALUES (?, ?, ?, ?, ?, ?, ?)";
+  const data = [
+    req.body.id,
+    req.body.title,
+    req.body.description,
+    req.body.date,
+    req.body.time,
+    req.body.user,
+    req.body.society
+  ];
 
   try {
     const [results] = await pool.query(sqlQuery, data);

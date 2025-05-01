@@ -1,0 +1,54 @@
+Table: comments
+Columns:
+ID varchar(200) PK 
+Content text 
+Post varchar(200) 
+User varchar(200)
+
+Table: events
+Columns:
+ID varchar(200) PK 
+Title varchar(200) 
+Description text 
+Date date 
+Time time 
+User varchar(200) 
+Society varchar(200)
+
+Table: posts
+Columns:
+ID varchar(200) PK 
+Content text 
+Likes int 
+Comments int 
+User varchar(200)
+
+Table: societies
+Columns:
+ID varchar(200) PK 
+Name varchar(200) 
+Description varchar(200) 
+User varchar(200)
+
+Table: societies_join_request
+Columns:
+ID varchar(200) 
+Society varchar(200) 
+User varchar(200) 
+Status varchar(200)
+
+Table: societies_memebers
+Columns:
+ID varchar(200) 
+Society varchar(200) 
+User varchar(200) 
+Role varchar(200)
+
+Table: users
+Columns:
+ID varchar(200) PK 
+Name varchar(200) 
+Email varchar(200) 
+Password varchar(200) 
+Student_ID varchar(200) 
+Photo varchar(200)

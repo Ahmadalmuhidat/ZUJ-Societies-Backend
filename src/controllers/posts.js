@@ -12,7 +12,7 @@ exports.get_posts = async (req, res) => {
 
 exports.create_post = async (req, res) => {
   try {
-    const sqlQuery = "INSERT INTO Posts (ID, Content, Likes, Comments, User) VALUES (?, ?, ?, ?, ?)";
+    const sqlQuery = "INSERT INTO Posts VALUES (?, ?, ?, ?, ?)";
     const data = [req.body.id, req.body.content, req.body.likes, req.body.comments, req.body.user];
 
     const [results] = await pool.query(sqlQuery, data);
