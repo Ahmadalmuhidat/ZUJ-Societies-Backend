@@ -1,4 +1,5 @@
 const pool = require("../config/database");
+const { v4: uuidv4 } = require("uuid");
 
 exports.get_comments = async (req, res) => {
   try {
@@ -37,7 +38,7 @@ exports.create_comment = async (req, res) => {
       )
     `;
     const data = [
-      req.body.id,
+      uuidv4(),
       req.body.content,
       req.body.post,
       req.body.user
@@ -48,6 +49,26 @@ exports.create_comment = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to create comment" });
+  }
+};
+
+exports.delete_comment = async (req, res) => {
+  try {
+    const sql_query = `
+      DELETE FROM
+        Comments
+      WHERE
+        ID = ?
+    `;
+    const data = [
+      req.body.comment
+    ];
+
+    const [results] = await pool.query(sql_query, data);
+    res.status(201).json({ data: results });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error_message: "Failed to delete comment" });
   }
 };
 

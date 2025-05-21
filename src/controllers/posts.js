@@ -1,4 +1,5 @@
 const pool = require("../config/database");
+const { v4: uuidv4 } = require("uuid");
 
 exports.get_posts = async (req, res) => {
   try {
@@ -35,7 +36,7 @@ exports.create_post = async (req, res) => {
       )
     `;
     const data = [
-      req.body.id,
+      uuidv4(),
       req.body.content,
       req.body.likes,
       req.body.comments,
@@ -47,6 +48,26 @@ exports.create_post = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to create post" });
+  }
+};
+
+exports.delete_post = async (req, res) => {
+  try {
+    const sql_query = `
+      DELETE FROM
+        Posts
+      WHERE
+        ID = ?
+    `;
+    const data = [
+      req.body.post
+    ];
+
+    const [results] = await pool.query(sql_query, data);
+    res.status(201).json({ data: results });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error_message: "Failed to delete post" });
   }
 };
 
@@ -73,3 +94,5 @@ exports.get_posts_by_society = async (req, res) => {
     res.status(500).json({ error_message: "Failed to get posts for this society" });
   }
 };
+
+// add like

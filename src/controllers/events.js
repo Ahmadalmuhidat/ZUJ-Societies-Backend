@@ -1,4 +1,6 @@
 const pool = require("../config/database");
+const { v4: uuidv4 } = require("uuid");
+const mailer = require("../services/mailer")
 
 exports.get_events = async (req, res) => {
   try {
@@ -39,7 +41,7 @@ exports.create_event = async (req, res) => {
       )
     `;
     const data = [
-      req.body.id,
+      uuidv4(),
       req.body.title,
       req.body.description,
       req.body.date,
@@ -48,10 +50,52 @@ exports.create_event = async (req, res) => {
       req.body.society
     ];
     const [results] = await pool.query(sql_query, data);
+    if (results) {
+      const sql_query = `
+        SELECT
+          Users.Email
+        FROM
+          societies_members
+        LEFT JOIN
+          Users
+        ON
+          Users.ID = societies_members.User
+        WHERE
+          Society = ?
+      `;
+      const data = [req.body.society];
+      const [results] = await pool.query(sql_query, data);
+
+      if (results.length > 0) {
+        results.forEach((user) => {
+          mailer.send_email(user.Email, "New Event", "welcone to new event");
+        })
+      }
+    }
     res.status(201).json({ data: results });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to create event" });
+  }
+};
+
+exports.delete_event = async (req, res) => {
+  try {
+    const sql_query = `
+      DELETE FROM
+        Events
+      WHERE
+        ID = ?
+    `;
+    const data = [
+      req.body.event
+    ];
+
+    const [results] = await pool.query(sql_query, data);
+    res.status(201).json({ data: results });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error_message: "Failed to delete post" });
   }
 };
 
