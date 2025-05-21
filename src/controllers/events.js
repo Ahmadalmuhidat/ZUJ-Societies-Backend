@@ -2,7 +2,7 @@ const pool = require("../config/database");
 const { v4: uuidv4 } = require("uuid");
 const mailer = require("../services/mailer")
 
-exports.get_events = async (req, res) => {
+exports.get_all_events = async (req, res) => {
   try {
     const sql_query = `
       SELECT
@@ -46,8 +46,8 @@ exports.create_event = async (req, res) => {
       req.body.description,
       req.body.date,
       req.body.time,
-      req.body.user,
-      req.body.society
+      req.body.user_id,  // fix: get from token
+      req.body.society_id
     ];
     const [results] = await pool.query(sql_query, data);
     if (results) {
@@ -88,7 +88,7 @@ exports.delete_event = async (req, res) => {
         ID = ?
     `;
     const data = [
-      req.body.event
+      req.params.event_id
     ];
 
     const [results] = await pool.query(sql_query, data);
@@ -116,7 +116,7 @@ exports.get_events_by_society = async (req, res) => {
         Society = ?
     `;
     const data = [society_id];
-    const society_id = req.params.society_Id;
+    const society_id = req.params.society_id;
     const [rows] = await pool.query(sql_query, data);
 
     if (rows.length === 0) {

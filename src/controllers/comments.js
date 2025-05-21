@@ -1,29 +1,6 @@
 const pool = require("../config/database");
 const { v4: uuidv4 } = require("uuid");
 
-exports.get_comments = async (req, res) => {
-  try {
-    const sql_query = `
-      SELECT
-        ID,
-        Content,
-        Post,
-        User
-      FROM
-        Comments
-      WHERE
-        Post = ?
-    `;
-    const data = [req.params.post_id];
-
-    const [rows] = await pool.query(sql_query, data);
-    res.status(200).json({ data: rows });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error_message: "Failed to get comments" });
-  }
-};
-
 exports.create_comment = async (req, res) => {
   try {
     const sql_query = `
@@ -40,8 +17,8 @@ exports.create_comment = async (req, res) => {
     const data = [
       uuidv4(),
       req.body.content,
-      req.body.post,
-      req.body.user
+      req.body.post_id,
+      req.body.user_id // fix: get from token
     ];
 
     const [results] = await pool.query(sql_query, data);
@@ -61,7 +38,7 @@ exports.delete_comment = async (req, res) => {
         ID = ?
     `;
     const data = [
-      req.body.comment
+      req.params.comment_id
     ];
 
     const [results] = await pool.query(sql_query, data);

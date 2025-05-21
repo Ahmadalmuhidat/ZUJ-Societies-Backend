@@ -1,7 +1,7 @@
 const pool = require("../config/database");
 const { v4: uuidv4 } = require("uuid");
 
-exports.get_posts = async (req, res) => {
+exports.get_all_posts = async (req, res) => { // fix, get from socities that he is in
   try {
     const sql_query = `
       SELECT
@@ -35,12 +35,14 @@ exports.create_post = async (req, res) => {
         ?
       )
     `;
+    const initial_comments = 0;
+    const initial_likes = 0;
     const data = [
       uuidv4(),
       req.body.content,
-      req.body.likes,
-      req.body.comments,
-      req.body.user
+      initial_likes,
+      initial_comments,
+      req.body.user_id // fix: get from token
     ];
 
     const [results] = await pool.query(sql_query, data);
@@ -60,7 +62,7 @@ exports.delete_post = async (req, res) => {
         ID = ?
     `;
     const data = [
-      req.body.post
+      req.params.post_id
     ];
 
     const [results] = await pool.query(sql_query, data);
@@ -95,4 +97,4 @@ exports.get_posts_by_society = async (req, res) => {
   }
 };
 
-// add like
+// add likes routes

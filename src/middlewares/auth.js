@@ -1,6 +1,6 @@
 const json_web_token = require('../helper/json_web_token');
 
-const check_user_logged_in = (req, res, next) => {
+function check_user_logged_in (req, res, next)  {
   const token = req.params.society_Id;
   if (json_web_token.verify_token(token)) {
     next();
@@ -10,4 +10,6 @@ const check_user_logged_in = (req, res, next) => {
   }
 };
 
-module.exports = check_user_logged_in;
+module.exports = {
+  check_user_logged_in
+};
