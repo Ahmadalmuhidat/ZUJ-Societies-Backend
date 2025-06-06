@@ -1,6 +1,7 @@
 const pool = require("../config/database");
 const { v4: uuidv4 } = require("uuid");
 const mailer = require("../services/mailer")
+const json_web_token = require("../helper/json_web_token")
 
 exports.get_all_events = async (req, res) => {
   try {
@@ -11,8 +12,9 @@ exports.get_all_events = async (req, res) => {
         Description,
         Date,
         Time,
-        User,
-        Society
+        Category,
+        Location,
+        Image        
       FROM
         Events
     `;
@@ -37,6 +39,9 @@ exports.create_event = async (req, res) => {
         ?,
         ?,
         ?,
+        ?,
+        ?,
+        ?,
         ?
       )
     `;
@@ -46,32 +51,35 @@ exports.create_event = async (req, res) => {
       req.body.description,
       req.body.date,
       req.body.time,
-      req.body.user_id,  // fix: get from token
-      req.body.society_id
+      json_web_token.verify_token(req.body.token)['id'],
+      req.body.society_id,
+      req.body.location,
+      req.body.image,
+      req.body.category
     ];
     const [results] = await pool.query(sql_query, data);
-    if (results) {
-      const sql_query = `
-        SELECT
-          Users.Email
-        FROM
-          societies_members
-        LEFT JOIN
-          Users
-        ON
-          Users.ID = societies_members.User
-        WHERE
-          Society = ?
-      `;
-      const data = [req.body.society];
-      const [results] = await pool.query(sql_query, data);
+    // if (results) {
+    //   const sql_query = `
+    //     SELECT
+    //       Users.Email
+    //     FROM
+    //       societies_members
+    //     LEFT JOIN
+    //       Users
+    //     ON
+    //       Users.ID = societies_members.User
+    //     WHERE
+    //       Society = ?
+    //   `;
+    //   const data = [req.body.society];
+    //   const [results] = await pool.query(sql_query, data);
 
-      if (results.length > 0) {
-        results.forEach((user) => {
-          mailer.send_email(user.Email, "New Event", "welcone to new event");
-        })
-      }
-    }
+    //   if (results.length > 0) {
+    //     results.forEach((user) => {
+    //       mailer.send_email(user.Email, "New Event", "welcone to new event");
+    //     })
+    //   }
+    // }
     res.status(201).json({ data: results });
   } catch (err) {
     console.error(err);
@@ -88,7 +96,7 @@ exports.delete_event = async (req, res) => {
         ID = ?
     `;
     const data = [
-      req.params.event_id
+      req.query.event_id
     ];
 
     const [results] = await pool.query(sql_query, data);
@@ -103,27 +111,26 @@ exports.get_events_by_society = async (req, res) => {
   try {
     const sql_query = `
       SELECT
-        ID,
-        Title,
-        Description,
-        Date,
-        Time,
-        User,
-        Society
+        Events.ID,
+        Events.Image,
+        Events.Title,
+        Events.Description,
+        Events.Location,
+        Events.Date,
+        Events.Time,
+        Users.Name AS Organizer
       FROM
         Events
+      JOIN
+        Users
+      ON
+        Events.User = Users.ID
       WHERE
-        Society = ?
+        Events.Society = ?
     `;
-    const data = [society_id];
-    const society_id = req.params.society_id;
+    const data = [req.query.society_id];
     const [rows] = await pool.query(sql_query, data);
-
-    if (rows.length === 0) {
-      return res.status(404).json({ error_message: "No events found for this society" });
-    }
-
-    res.status(200).json({ data: rows });
+    res.status(201).json({ data: rows });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to get events for this society" });

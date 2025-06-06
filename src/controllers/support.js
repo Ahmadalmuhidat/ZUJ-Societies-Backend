@@ -1,3 +1,5 @@
+const pool = require("../config/database");
+
 exports.report_society = async (req, res) => {
   try {
   } catch (err) {

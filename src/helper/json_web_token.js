@@ -7,7 +7,7 @@ function generate_token(user) {
       email: user.email,
     },
     process.env.JWT_SECRET,
-    { expiresIn: '24h' }
+    { expiresIn: '30d' }
   );
 };
 

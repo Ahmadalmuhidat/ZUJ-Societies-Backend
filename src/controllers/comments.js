@@ -38,7 +38,7 @@ exports.delete_comment = async (req, res) => {
         ID = ?
     `;
     const data = [
-      req.params.comment_id
+      req.query.comment_id
     ];
 
     const [results] = await pool.query(sql_query, data);
@@ -62,7 +62,7 @@ exports.get_comments_by_post = async (req, res) => {
       WHERE
         Post = ?
     `;
-    const data = [req.params.post_id];
+    const data = [req.query.post_id];
     const [rows] = await pool.query(sql_query, data);
 
     res.status(200).json({ data: rows });
