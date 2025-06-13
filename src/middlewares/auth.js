@@ -15,8 +15,8 @@ function checkUserLoggedIn(req, res, next) {
   const valid = jsonWebToken.verify_token(token);
 
   if (valid) {
-    // Optionally: attach decoded user to request for later use
-    req.user = valid;
+    // Optionally: attach decoded User to request for later use
+    req.User = valid;
     next();
   } else {
     res.status(401).json({ error_message: "Failed to verify the token" });

@@ -19,7 +19,7 @@ exports.createComment = async (req, res) => {
       uuidv4(),
       req.body.content,
       req.body.post_id,
-      jsonWebToken.verify_token(req.body.user_id)['id']
+      jsonWebToken.verify_token(req.body.User_id)['id']
     ];
 
     const [results] = await pool.query(sql_query, data);
@@ -73,6 +73,6 @@ exports.getCommentsByPost = async (req, res) => {
     res.status(201).json({ data: rows });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error_message: "Failed to get comments for this post" });
+    res.status(500).json({ error_message: "Failed to get Comments for this post" });
   }
 };

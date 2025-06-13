@@ -27,23 +27,23 @@ exports.getAllPosts = async (req, res) => {
       ON
         Posts.User = Users.ID
       JOIN
-        Societies_Memebers
+        Societies_Members
       ON
-        Societies_Memebers.Society = Societies.ID
+        Societies_Members.Society = Societies.ID
       LEFT JOIN
         Likes
       ON
         Likes.Post = Posts.ID
       AND
-        Likes.User = Societies_Memebers.User
+        Likes.User = Societies_Members.User
       WHERE
-        Societies_Memebers.User = ?
+        Societies_Members.User = ?
     `;
     const [rows] = await pool.query(sql_query, [jsonWebToken.verify_token(req.query.token)['id']]);
     res.status(200).json({ data: rows });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error_message: "Failed to get posts" });
+    res.status(500).json({ error_message: "Failed to get Posts" });
   }
 };
 
@@ -61,13 +61,13 @@ exports.createPost = async (req, res) => {
         ?
       )
     `;
-    const initial_comments = 0;
+    const initial_Comments = 0;
     const initial_likes = 0;
     const data = [
       uuidv4(),
       req.body.content,
       initial_likes,
-      initial_comments,
+      initial_Comments,
       jsonWebToken.verify_token(req.body.token)['id'],
       req.body.image
     ];
@@ -131,13 +131,13 @@ exports.getPostsBySociety = async (req, res) => {
     res.status(200).json({ data: rows });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error_message: "Failed to get posts for this society" });
+    res.status(500).json({ error_message: "Failed to get Posts for this society" });
   }
 };
 
 exports.likePost = async (req, res) => {
   try {
-    const userId = jsonWebToken.verify_token(req.body.token)['id'];
+    const UserId = jsonWebToken.verify_token(req.body.token)['id'];
     const postId = req.body.post_id;
 
     const checkQuery = `
@@ -145,7 +145,7 @@ exports.likePost = async (req, res) => {
       WHERE User = ? AND Post = ?
       LIMIT 1
     `;
-    const [existing] = await pool.query(checkQuery, [userId, postId]);
+    const [existing] = await pool.query(checkQuery, [UserId, postId]);
 
     if (existing.length > 0) {
       return res.status(400).json({ error_message: "User already liked this post" });
@@ -155,7 +155,7 @@ exports.likePost = async (req, res) => {
       INSERT INTO Likes (ID, User, Post)
       VALUES (?, ?, ?)
     `;
-    await pool.query(insertQuery, [uuidv4(), userId, postId]);
+    await pool.query(insertQuery, [uuidv4(), UserId, postId]);
 
     const increaseQuery = `
       UPDATE Posts

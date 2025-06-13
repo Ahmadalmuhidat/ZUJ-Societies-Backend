@@ -41,7 +41,7 @@ exports.getAllSocieties = async (req, res) => {
     res.status(200).json({ data: rows });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error_message: "Failed to get societies" });
+    res.status(500).json({ error_message: "Failed to get Societies" });
   }
 };
 
@@ -62,12 +62,12 @@ exports.createSociety = async (req, res) => {
       )
     `;
     const new_society_id = uuidv4();
-    const user_id = jsonWebToken.verify_token(req.body.token)['id'];
+    const User_id = jsonWebToken.verify_token(req.body.token)['id'];
     const data = [
       new_society_id,
       req.body.name,
       req.body.description,
-      user_id,
+      User_id,
       req.body.category,
       req.body.visibilty,
       req.body.image
@@ -76,7 +76,7 @@ exports.createSociety = async (req, res) => {
 
     const member_query = `
       INSERT INTO
-        societies_memebers
+        Societies_Members
       VALUES
       (
         ?,
@@ -85,7 +85,7 @@ exports.createSociety = async (req, res) => {
         ?
       )
     `;
-    const member_data = [uuidv4(), new_society_id, user_id, "admin"];
+    const member_data = [uuidv4(), new_society_id, User_id, "admin"];
     await pool.query(member_query, member_data);
 
     res.status(201).json({ data: new_society_id });
@@ -124,17 +124,17 @@ exports.getSocietiesByUser = async (req, res) => {
         Societies.Name,
         Societies.Category,
         Societies.Description,
-        societies_memebers.Role
+        Societies_Members.Role
       FROM
         Societies
       LEFT JOIN
-        societies_memebers
+        Societies_Members
       ON
-        Societies.ID = societies_memebers.Society
+        Societies.ID = Societies_Members.Society
       WHERE
         Societies.User = ?
       OR
-        societies_memebers.User = ?
+        Societies_Members.User = ?
     `;
     const UserID = jsonWebToken.verify_token(req.query.token)['id'];    
     const data = [UserID, UserID];
@@ -142,7 +142,7 @@ exports.getSocietiesByUser = async (req, res) => {
     res.status(201).json({ data: rows });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error_message: "Failed to get societies for the user" });
+    res.status(500).json({ error_message: "Failed to get Societies for the User" });
   }
 };
 
@@ -174,7 +174,7 @@ exports.joinSocietyRequest = async (req, res) => {
     const request_status = "pending";
     const sql_query = `
     INSERT INTO
-      societies_join_request
+      Societies_Join_Request
     VALUES
     (
       ?,
@@ -205,7 +205,7 @@ exports.approveRequest = async (req, res) => {
       User,
       Society
     FROM
-      societies_join_request
+      Societies_Join_Request
     WHERE
       ID = ?
     `;
@@ -218,7 +218,7 @@ exports.approveRequest = async (req, res) => {
     if (results.length > 0) {
       sql_query = `
         UPDATE
-          societies_join_request
+          Societies_Join_Request
         SET
           Status = 'approved'
         WHERE
@@ -231,7 +231,7 @@ exports.approveRequest = async (req, res) => {
       const member_role = "member";
       sql_query = `
       INSERT INTO
-        societies_memebers
+        Societies_Members
       VALUES
       (
         ?,
@@ -247,7 +247,7 @@ exports.approveRequest = async (req, res) => {
         member_role
       ];
 
-      // send email to the user that he has been accepted
+      // send email to the User that he has been accepted
       res.status(201).json({ data: await pool.query(sql_query, data) });
     } else {
       res.status(404).json({ error: "request was not found" });
@@ -262,7 +262,7 @@ exports.rejectRequest = async (req, res) => {
   try {
     const sql_query = `
     UPDATE
-      societies_join_request
+      Societies_Join_Request
     SET
       Status = 'rejected'
     WHERE
@@ -284,21 +284,21 @@ exports.getAllJoinRequests = async (req, res) => {
   try {
     const sql_query = `
       SELECT
-        societies_join_request.ID AS Request_ID,
-        societies_join_request.Status,
-        users.ID AS User_ID,
-        users.Name AS User_Name,
-        users.Email AS User_Email,
-        users.Photo AS User_Photo,
-        societies_join_request.Status
+        Societies_Join_Request.ID AS Request_ID,
+        Societies_Join_Request.Status,
+        Users.ID AS User_ID,
+        Users.Name AS User_Name,
+        Users.Email AS User_Email,
+        Users.Photo AS User_Photo,
+        Societies_Join_Request.Status
       FROM
-        societies_join_request
+        Societies_Join_Request
       JOIN
-        users
+        Users
       ON
-        societies_join_request.User = users.ID
+        Societies_Join_Request.User = Users.ID
       WHERE
-        societies_join_request.Society = ?
+        Societies_Join_Request.Society = ?
     `;
     const data = [
       req.query.society_id,
@@ -319,15 +319,15 @@ exports.getAllMembers = async (req, res) => {
       Users.Name,
       Users.Email,
       Users.Photo,
-      societies_memebers.Role
+      Societies_Members.Role
     FROM
       Users
     JOIN
-      societies_memebers
+      Societies_Members
     ON
-      societies_memebers.User = Users.ID
+      Societies_Members.User = Users.ID
     WHERE
-      societies_memebers.Society = ?
+      Societies_Members.Society = ?
     `;
     const data = [
       req.query.society_id,
@@ -344,7 +344,7 @@ exports.removeMember = async (req, res) => {
   try {
     const sql_query = `
       DELETE FROM
-        societies_memebers
+        Societies_Members
       WHERE
         User=?
       AND
@@ -352,7 +352,7 @@ exports.removeMember = async (req, res) => {
     `;
     const data = [
       req.query.society_id,
-      req.query.user_id
+      req.query.User_id
     ];
 
     const [results] = await pool.query(sql_query, data);
@@ -370,7 +370,7 @@ exports.checkMembership = async (req, res) => {
       SELECT
         1
       FROM
-        societies_memebers
+        Societies_Members
       WHERE
         User = ?
       AND
@@ -419,7 +419,7 @@ exports.updateMemberRole = async (req, res) => {
   try {
     const sql_query = `
     UPDATE
-      societies_memebers
+      Societies_Members
     SET
       Role = ?
     WHERE
@@ -444,7 +444,7 @@ exports.leaveSociety = async (req, res) => {
   try {
     const sql_query = `
     DELETE FROM
-      societies_memebers
+      Societies_Members
     WHERE
       User = ?
     AND

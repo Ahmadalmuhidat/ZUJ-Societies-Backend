@@ -22,7 +22,7 @@ exports.getAllEvents = async (req, res) => {
     res.status(200).json({ data: rows });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error_message: "Failed to get events" });
+    res.status(500).json({ error_message: "Failed to get Events" });
   }
 };
 
@@ -53,7 +53,7 @@ exports.getEventInfo = async (req, res) => {
     res.status(201).json({ data: rows[0] });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error_message: "Failed to get events for this society" });
+    res.status(500).json({ error_message: "Failed to get Events for this society" });
   }
 };
 
@@ -79,7 +79,7 @@ exports.searchEvent = async (req, res) => {
     res.status(201).json({ data: rows });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error_message: "Failed to get events" });
+    res.status(500).json({ error_message: "Failed to get Events" });
   }
 };
 
@@ -121,11 +121,11 @@ exports.createEvent = async (req, res) => {
         SELECT
           Users.Email
         FROM
-          societies_memebers
+          Societies_Members
         LEFT JOIN
           Users
         ON
-          Users.ID = societies_memebers.User
+          Users.ID = Societies_Members.User
         WHERE
           Society = ?
       `;
@@ -133,8 +133,8 @@ exports.createEvent = async (req, res) => {
       const [results] = await pool.query(sql_query, data);
 
       if (results.length > 0) {
-        results.forEach((user) => {
-          mailer.sendEmail(user.Email, "New Event", "welcone to new event");
+        results.forEach((User) => {
+          mailer.sendEmail(User.Email, "New Event", "welcone to new event");
         })
       }
     }
@@ -191,6 +191,6 @@ exports.getEventsBySociety = async (req, res) => {
     res.status(201).json({ data: rows });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error_message: "Failed to get events for this society" });
+    res.status(500).json({ error_message: "Failed to get Events for this society" });
   }
 };

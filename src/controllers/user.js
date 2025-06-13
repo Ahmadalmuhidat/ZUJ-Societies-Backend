@@ -17,7 +17,7 @@ exports.getUserInformation = async (req, res) => {
     res.status(201).json({ data: rows[0] });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error_message: "Failed to get users" });
+    res.status(500).json({ error_message: "Failed to get Users" });
   }
 };
 
@@ -44,7 +44,7 @@ exports.getUserProfileInformation = async (req, res) => {
     res.status(201).json({ data: rows[0] });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error_message: "Failed to get user profile" });
+    res.status(500).json({ error_message: "Failed to get User profile" });
   }
 };
 
@@ -72,6 +72,6 @@ exports.updateProfile = async (req, res) => {
     res.status(200).json({ data: results });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error_message: "Failed to get user profile" });
+    res.status(500).json({ error_message: "Failed to get User profile" });
   }
 };

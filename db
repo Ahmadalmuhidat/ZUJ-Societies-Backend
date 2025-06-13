@@ -1,11 +1,11 @@
-Table: comments
+Table: Comments
 Columns:
 ID varchar(200) PK 
 Content text 
 Post varchar(200) 
 User varchar(200)
 
-Table: events
+Table: Events
 Columns:
 ID varchar(200) PK 
 Title varchar(200) 
@@ -15,7 +15,7 @@ Time time
 User varchar(200) 
 Society varchar(200)
 
-Table: posts
+Table: Posts
 Columns:
 ID varchar(200) PK 
 Content text 
@@ -23,28 +23,28 @@ Likes int
 Comments int 
 User varchar(200)
 
-Table: societies
+Table: Societies
 Columns:
 ID varchar(200) PK 
 Name varchar(200) 
 Description varchar(200) 
 User varchar(200)
 
-Table: societies_join_request
+Table: Societies_Join_Request
 Columns:
 ID varchar(200) 
 Society varchar(200) 
 User varchar(200) 
 Status varchar(200)
 
-Table: societies_memebers
+Table: Societies_Members
 Columns:
 ID varchar(200) 
 Society varchar(200) 
 User varchar(200) 
 Role varchar(200)
 
-Table: users
+Table: Users
 Columns:
 ID varchar(200) PK 
 Name varchar(200) 

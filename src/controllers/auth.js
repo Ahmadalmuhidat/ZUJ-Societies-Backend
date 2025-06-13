@@ -23,16 +23,16 @@ exports.login = async (req, res) => {
     const [results] = await pool.execute(sqlQuery, [email]);
 
     if (results.length > 0) {
-      const user = results[0];
-      const isPasswordCorrect = await passwords_helper.verify_password(password, user.Password);
+      const User = results[0];
+      const isPasswordCorrect = await passwords_helper.verify_password(password, User.Password);
 
       if (isPasswordCorrect) {
         const token = jsonWebToken.generate_token({
-          id: user.ID,
-          name: user.Name,
-          email: user.Email
+          id: User.ID,
+          name: User.Name,
+          email: User.Email
         });
-        return res.status(200).json({ data: token });
+        return res.status(201).json({ data: token });
       } else {
         return res.status(401).json({ error: "Password is incorrect" });
       }
@@ -64,7 +64,7 @@ exports.register = async (req, res) => {
         ?
       )
     `;
-    const create_date = "";
+    const create_date =  new Date().toISOString().slice(0, 10);;
     const data = [
       uuidv4(),
       req.body.name,
@@ -77,16 +77,10 @@ exports.register = async (req, res) => {
       create_date
     ];
 
-    // mailer.sendEmail(
-    //   req.body.email,
-    //   "welcone to zuj societies",
-    //   "welcome"
-    // );
-
     const [results] = await pool.query(sql_query, data);
     res.status(201).json({ data: results });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error_message: "Failed to create user" });
+    res.status(500).json({ error_message: "Failed to create User" });
   }
 };
