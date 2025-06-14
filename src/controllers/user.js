@@ -1,7 +1,7 @@
 const pool = require("../config/database");
-const json_web_token = require("../helper/json_web_token")
+const jsonWebToken = require("../helper/json_web_token")
 
-exports.get_user_info = async (req, res) => {
+exports.getUserInformation = async (req, res) => {
   try {
     const sql_query = `
       SELECT
@@ -13,7 +13,7 @@ exports.get_user_info = async (req, res) => {
       WHERE
         ID = ?
     `
-    const [rows] = await pool.query(sql_query, [json_web_token.verify_token(req.query.token)['id']]);
+    const [rows] = await pool.query(sql_query, [jsonWebToken.verify_token(req.query.token)['id']]);
     res.status(201).json({ data: rows[0] });
   } catch (err) {
     console.error(err);
@@ -21,7 +21,7 @@ exports.get_user_info = async (req, res) => {
   }
 };
 
-exports.get_user_profile_info = async (req, res) => {
+exports.getUserProfileInformation = async (req, res) => {
   try {
     const sql_query = `
       SELECT
@@ -40,8 +40,36 @@ exports.get_user_profile_info = async (req, res) => {
       WHERE
         Users.ID = ?
     `
-    const [rows] = await pool.query(sql_query, [json_web_token.verify_token(req.query.token)['id']]);
+    const [rows] = await pool.query(sql_query, [jsonWebToken.verify_token(req.query.token)['id']]);
     res.status(201).json({ data: rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error_message: "Failed to get user profile" });
+  }
+};
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const sql_query = `
+      UPDATE
+        Users
+      SET
+        Name = ?,
+        Email = ?,
+        Phone_Number = ?,
+        Bio = ?
+      WHERE
+        Users.ID = ?
+    `
+    const data = [
+      req.body.name,
+      req.body.email,
+      req.body.phone,
+      req.body.bio,
+      jsonWebToken.verify_token(req.body.token)['id']
+    ];
+    const [results] = await pool.query(sql_query, data);
+    res.status(200).json({ data: results });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to get user profile" });

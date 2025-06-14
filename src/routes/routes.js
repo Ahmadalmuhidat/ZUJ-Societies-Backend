@@ -1,80 +1,93 @@
 const express = require('express');
 const router = express.Router();
-const auth_controller = require('../controllers/auth');
-const comments_controller = require('../controllers/comments');
-const events_controller = require('../controllers/events');
-const posts_controller = require('../controllers/posts');
-const societies_controller = require('../controllers/societies');
-
-const user_controller = require('../controllers/user');
-const auth_mdiddleware = require('../middlewares/auth');
+const authController = require('../controllers/auth');
+const commentsController = require('../controllers/comments');
+const eventsController = require('../controllers/events');
+const postsController = require('../controllers/posts');
+const societiesController = require('../controllers/societies');
+const userController = require('../controllers/user');
+const authMiddleware = require('../middlewares/auth');
+const supportController = require('../controllers/support');
 
 // auth routes
-router.get('/auth/login', auth_controller.login);
+router.get('/auth/login', authController.login);
 
-router.post('/auth/register', auth_controller.register);
-
+router.post('/auth/register', authController.register);
 
 // users routes
-router.get('/users/get_user_info', auth_mdiddleware.check_user_logged_in, user_controller.get_user_info);
+router.get('/users/get_user_info', authMiddleware.checkUserLoggedIn, userController.getUserInformation);
 
-router.get('/users/get_user_profile_info', auth_mdiddleware.check_user_logged_in, user_controller.get_user_profile_info);
+router.get('/users/get_user_profile_info', authMiddleware.checkUserLoggedIn, userController.getUserProfileInformation);
 
-// router.delete('/users/delete_user', auth_mdiddleware.check_user_logged_in, user_controller.delete_user);
+router.put('/users/update_profile', authMiddleware.checkUserLoggedIn, userController.updateProfile);
 
+// router.delete('/users/delete_user', auth_mdiddleware.checkUserLoggedIn, user_controller.delete_user);
 
 // societies routes
-router.get('/societies/get_society_info', auth_mdiddleware.check_user_logged_in, societies_controller.get_society_info);
+router.get('/societies/get_society_info', authMiddleware.checkUserLoggedIn, societiesController.getSocietyInformation);
 
-router.get('/societies/get_all_societies', auth_mdiddleware.check_user_logged_in, societies_controller.get_all_societies);
+router.get('/societies/get_all_societies', authMiddleware.checkUserLoggedIn, societiesController.getAllSocieties);
 
-router.get('/societies/search_society', auth_mdiddleware.check_user_logged_in, societies_controller.search_society);
+router.get('/societies/search_society', authMiddleware.checkUserLoggedIn, societiesController.searchSociety);
 
-router.post('/societies/create_society', auth_mdiddleware.check_user_logged_in, societies_controller.create_society);
+router.post('/societies/create_society', authMiddleware.checkUserLoggedIn, societiesController.createSociety);
 
-router.delete('/societies/delete_society', auth_mdiddleware.check_user_logged_in, societies_controller.delete_society);
+router.delete('/societies/delete_society', authMiddleware.checkUserLoggedIn, societiesController.deleteSociety);
 
-router.get('/societies/get_societies_by_user', auth_mdiddleware.check_user_logged_in, societies_controller.get_societies_by_user);
+router.get('/societies/get_societies_by_user', authMiddleware.checkUserLoggedIn, societiesController.getSocietiesByUser);
 
-router.post('/societies/join_society_request', auth_mdiddleware.check_user_logged_in, societies_controller.join_society_request);
+router.post('/societies/join_society_request', authMiddleware.checkUserLoggedIn, societiesController.joinSocietyRequest);
 
-router.post('/societies/approve_request', auth_mdiddleware.check_user_logged_in, societies_controller.approve_request);
+router.post('/societies/approve_request', authMiddleware.checkUserLoggedIn, societiesController.approveRequest);
 
-router.post('/societies/reject_request', auth_mdiddleware.check_user_logged_in, societies_controller.reject_request);
+router.post('/societies/reject_request', authMiddleware.checkUserLoggedIn, societiesController.rejectRequest);
 
-router.get('/societies/get_all_join_requests', auth_mdiddleware.check_user_logged_in, societies_controller.get_all_join_requests);
+router.get('/societies/get_all_join_requests', authMiddleware.checkUserLoggedIn, societiesController.getAllJoinRequests);
 
-router.get('/societies/get_all_members', auth_mdiddleware.check_user_logged_in, societies_controller.get_all_members);
+router.get('/societies/get_all_members', authMiddleware.checkUserLoggedIn, societiesController.getAllMembers);
 
-router.delete('/societies/remove_member', auth_mdiddleware.check_user_logged_in, societies_controller.remove_member);
+router.delete('/societies/remove_member', authMiddleware.checkUserLoggedIn, societiesController.removeMember);
 
-router.get('/societies/check_membership', auth_mdiddleware.check_user_logged_in, societies_controller.check_membership);
+router.get('/societies/check_membership', authMiddleware.checkUserLoggedIn, societiesController.checkMembership);
+
+router.put('/societies/update_info', authMiddleware.checkUserLoggedIn, societiesController.updateInformation);
+
+router.put('/societies/update_member_role', authMiddleware.checkUserLoggedIn, societiesController.updateMemberRole);
+
+router.put('/societies/leave_society', authMiddleware.checkUserLoggedIn, societiesController.leaveSociety);
 
 // comment routes
-router.get('/comment/get_comments_by_post', auth_mdiddleware.check_user_logged_in, comments_controller.get_comments_by_post);
+router.get('/comment/get_comments_by_post', authMiddleware.checkUserLoggedIn, commentsController.getCommentsByPost);
 
-router.post('/comment/create_comment', auth_mdiddleware.check_user_logged_in, comments_controller.create_comment);
+router.post('/comment/create_comment', authMiddleware.checkUserLoggedIn, commentsController.createComment);
 
-router.delete('/comment/delete_comment', auth_mdiddleware.check_user_logged_in, comments_controller.delete_comment);
-
+router.delete('/comment/delete_comment', authMiddleware.checkUserLoggedIn, commentsController.deleteComment);
 
 // events routes
-router.get('/events/get_all_events', auth_mdiddleware.check_user_logged_in, events_controller.get_all_events);
+router.get('/events/get_all_events', authMiddleware.checkUserLoggedIn, eventsController.getAllEvents);
 
-router.post('/events/create_event', auth_mdiddleware.check_user_logged_in, events_controller.create_event);
+router.get('/events/search_event', authMiddleware.checkUserLoggedIn, eventsController.searchEvent);
 
-router.delete('/events/delete_event', auth_mdiddleware.check_user_logged_in, events_controller.delete_event);
+router.get('/events/get_event_info', authMiddleware.checkUserLoggedIn, eventsController.getEventInfo);
 
-router.get('/events/get_events_by_society', auth_mdiddleware.check_user_logged_in, events_controller.get_events_by_society);
+router.post('/events/create_event', authMiddleware.checkUserLoggedIn, eventsController.createEvent);
 
+router.delete('/events/delete_event', authMiddleware.checkUserLoggedIn, eventsController.deleteEvent);
+
+router.get('/events/get_events_by_society', authMiddleware.checkUserLoggedIn, eventsController.getEventsBySociety);
 
 // posts routes
-router.get('/posts/get_all_posts', auth_mdiddleware.check_user_logged_in, posts_controller.get_all_posts);
+router.get('/posts/get_all_posts', authMiddleware.checkUserLoggedIn, postsController.getAllPosts);
 
-router.post('/posts/create_post', auth_mdiddleware.check_user_logged_in, posts_controller.create_post);
+router.post('/posts/create_post', authMiddleware.checkUserLoggedIn, postsController.createPost);
 
-router.delete('/posts/delete_post', auth_mdiddleware.check_user_logged_in, posts_controller.delete_post);
+router.delete('/posts/delete_post', authMiddleware.checkUserLoggedIn, postsController.deletePost);
 
-router.get('/posts/get_posts_by_society', auth_mdiddleware.check_user_logged_in, posts_controller.get_posts_by_society);
+router.get('/posts/get_posts_by_society', authMiddleware.checkUserLoggedIn, postsController.getPostsBySociety);
+
+router.post('/posts/like_post', authMiddleware.checkUserLoggedIn, postsController.likePost);
+
+// support routes
+router.post('/support/create_ticket', authMiddleware.checkUserLoggedIn, supportController.CreateTicket);
 
 module.exports = router;

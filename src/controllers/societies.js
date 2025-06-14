@@ -1,9 +1,9 @@
 const pool = require("../config/database");
 const { v4: uuidv4 } = require("uuid");
 const mailer = require("../services/mailer")
-const json_web_token = require("../helper/json_web_token")
+const jsonWebToken = require("../helper/json_web_token")
 
-exports.get_society_info = async (req, res) => {
+exports.getSocietyInformation = async (req, res) => {
   try {
     const sql_query = `
       SELECT
@@ -24,7 +24,7 @@ exports.get_society_info = async (req, res) => {
   }
 };
 
-exports.get_all_societies = async (req, res) => {
+exports.getAllSocieties = async (req, res) => {
   try {
     const sql_query = `
       SELECT
@@ -45,7 +45,7 @@ exports.get_all_societies = async (req, res) => {
   }
 };
 
-exports.create_society = async (req, res) => {
+exports.createSociety = async (req, res) => {
   try {
     const sql_query = `
       INSERT INTO
@@ -62,19 +62,32 @@ exports.create_society = async (req, res) => {
       )
     `;
     const new_society_id = uuidv4();
+    const user_id = jsonWebToken.verify_token(req.body.token)['id'];
     const data = [
       new_society_id,
       req.body.name,
       req.body.description,
-      json_web_token.verify_token(req.body.token)['id'],
+      user_id,
       req.body.category,
       req.body.visibilty,
       req.body.image
     ];
+    await pool.query(sql_query, data);
 
-    // add user to societies membership
+    const member_query = `
+      INSERT INTO
+        societies_memebers
+      VALUES
+      (
+        ?,
+        ?,
+        ?,
+        ?
+      )
+    `;
+    const member_data = [uuidv4(), new_society_id, user_id, "admin"];
+    await pool.query(member_query, member_data);
 
-    const [results] = await pool.query(sql_query, data);
     res.status(201).json({ data: new_society_id });
   } catch (err) {
     console.error(err);
@@ -82,7 +95,7 @@ exports.create_society = async (req, res) => {
   }
 };
 
-exports.delete_society = async (req, res) => {
+exports.deleteSociety = async (req, res) => {
   try {
     const sql_query = `
       DELETE FROM
@@ -102,34 +115,38 @@ exports.delete_society = async (req, res) => {
   }
 };
 
-exports.get_societies_by_user = async (req, res) => {
+exports.getSocietiesByUser = async (req, res) => {
   try {
     const sql_query = `
       SELECT
         Societies.ID,
+        Societies.Image,
         Societies.Name,
+        Societies.Category,
         Societies.Description,
-        Societies.User
+        societies_memebers.Role
       FROM
         Societies
       LEFT JOIN
         societies_memebers
       ON
-        Societies.ID = societies_memebers.SocietyID
+        Societies.ID = societies_memebers.Society
       WHERE
         Societies.User = ?
-        OR societies_memebers.User = ?;
+      OR
+        societies_memebers.User = ?
     `;
-    const data = [req.query.user_id, req.query.user_id]; /// fix: get user id from the token
+    const UserID = jsonWebToken.verify_token(req.query.token)['id'];    
+    const data = [UserID, UserID];
     const [rows] = await pool.query(sql_query, data);
-    res.status(200).json({ data: rows });
+    res.status(201).json({ data: rows });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to get societies for the user" });
   }
 };
 
-exports.search_society = async (req, res) => {
+exports.searchSociety = async (req, res) => {
   try {
     const sql_query = `
     SELECT
@@ -140,19 +157,19 @@ exports.search_society = async (req, res) => {
     FROM
       Societies
     WHERE
-      ID = ?
+      Name = ?
     `;
     const data = [req.query.search_term];
     const [rows] = await pool.query(sql_query, data);
 
-    res.status(200).json({ data: rows[0] });
+    res.status(201).json({ data: rows });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to get society" });
   }
 };
 
-exports.join_society_request = async (req, res) => {
+exports.joinSocietyRequest = async (req, res) => {
   try {
     const request_status = "pending";
     const sql_query = `
@@ -169,7 +186,7 @@ exports.join_society_request = async (req, res) => {
     const data = [
       uuidv4(),
       req.body.society_id,
-      json_web_token.verify_token(req.body.token)['id'],
+      jsonWebToken.verify_token(req.body.token)['id'],
       request_status,
     ];
 
@@ -181,7 +198,7 @@ exports.join_society_request = async (req, res) => {
   }
 };
 
-exports.approve_request = async (req, res) => {
+exports.approveRequest = async (req, res) => {
   try {
     let sql_query = `
     SELECT
@@ -241,7 +258,7 @@ exports.approve_request = async (req, res) => {
   }
 };
 
-exports.reject_request = async (req, res) => {
+exports.rejectRequest = async (req, res) => {
   try {
     const sql_query = `
     UPDATE
@@ -263,7 +280,7 @@ exports.reject_request = async (req, res) => {
   }
 };
 
-exports.get_all_join_requests = async (req, res) => {
+exports.getAllJoinRequests = async (req, res) => {
   try {
     const sql_query = `
       SELECT
@@ -294,7 +311,7 @@ exports.get_all_join_requests = async (req, res) => {
   }
 };
 
-exports.get_all_members = async (req, res) => {
+exports.getAllMembers = async (req, res) => {
   try {
     const sql_query = `
     SELECT
@@ -323,7 +340,7 @@ exports.get_all_members = async (req, res) => {
   }
 };
 
-exports.remove_member = async (req, res) => {
+exports.removeMember = async (req, res) => {
   try {
     const sql_query = `
       DELETE FROM
@@ -346,7 +363,7 @@ exports.remove_member = async (req, res) => {
   }
 };
 
-exports.check_membership = async (req, res) => {
+exports.checkMembership = async (req, res) => {
   try {
     const sql_query = `
     SELECT EXISTS (
@@ -358,10 +375,10 @@ exports.check_membership = async (req, res) => {
         User = ?
       AND
         Society = ?
-    ) AS is_member;
+    ) AS is_member
     `;
     const data = [
-      json_web_token.verify_token(req.query.token)['id'],
+      jsonWebToken.verify_token(req.query.token)['id'],
       req.query.society_id
     ];
     const [results] = await pool.query(sql_query, data);
@@ -369,5 +386,78 @@ exports.check_membership = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to check membership" });
+  }
+};
+
+exports.updateInformation = async (req, res) => {
+  try {
+    const sql_query = `
+    UPDATE
+      Societies
+    SET
+      Name = ?,
+      Description = ?,
+      Category = ?
+    WHERE
+      ID = ?
+    `;
+    const data = [
+      req.body.name,
+      req.body.description,
+      req.body.category,
+      req.body.society_id
+    ];
+    const [results] = await pool.query(sql_query, data);
+    res.status(201).json({ data: results });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error_message: "Failed to update society info" });
+  }
+};
+
+exports.updateMemberRole = async (req, res) => {
+  try {
+    const sql_query = `
+    UPDATE
+      societies_memebers
+    SET
+      Role = ?
+    WHERE
+      User = ?
+    AND
+     Society = ?
+    `;
+    const data = [
+      req.body.role,
+      req.body.member,
+      req.body.society_id
+    ];
+    const [results] = await pool.query(sql_query, data);
+    res.status(200).json({ data: results });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error_message: "Failed to update society info" });
+  }
+};
+
+exports.leaveSociety = async (req, res) => {
+  try {
+    const sql_query = `
+    DELETE FROM
+      societies_memebers
+    WHERE
+      User = ?
+    AND
+     Society = ?
+    `;
+    const data = [
+      jsonWebToken.verify_token(req.body.token)['id'],
+      req.body.society_id
+    ];
+    const [results] = await pool.query(sql_query, data);
+    res.status(200).json({ data: results });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error_message: "Failed to leave society" });
   }
 };

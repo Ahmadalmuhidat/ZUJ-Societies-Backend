@@ -1,7 +1,8 @@
 const pool = require("../config/database");
 const { v4: uuidv4 } = require("uuid");
+const jsonWebToken = require("../helper/json_web_token")
 
-exports.create_comment = async (req, res) => {
+exports.createComment = async (req, res) => {
   try {
     const sql_query = `
       INSERT INTO
@@ -18,18 +19,18 @@ exports.create_comment = async (req, res) => {
       uuidv4(),
       req.body.content,
       req.body.post_id,
-      req.body.user_id // fix: get from token
+      jsonWebToken.verify_token(req.body.user_id)['id']
     ];
 
     const [results] = await pool.query(sql_query, data);
-    res.status(201).json({ data: results });
+    res.status(200).json({ data: results });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to create comment" });
   }
 };
 
-exports.delete_comment = async (req, res) => {
+exports.deleteComment = async (req, res) => {
   try {
     const sql_query = `
       DELETE FROM
@@ -49,23 +50,27 @@ exports.delete_comment = async (req, res) => {
   }
 };
 
-exports.get_comments_by_post = async (req, res) => {
+exports.getCommentsByPost = async (req, res) => {
   try {
     const sql_query = `
       SELECT
-        ID,
-        Content,
-        Post,
-        User
+        Comments.ID,
+        Comments.Content,
+        Users.Name AS User_Name,
+        Users.Photo AS User_Photo
       FROM
         Comments
+      JOIN
+        Users
+      ON
+        Comments.User = Users.ID
       WHERE
-        Post = ?
+        Comments.Post = ?
     `;
     const data = [req.query.post_id];
     const [rows] = await pool.query(sql_query, data);
 
-    res.status(200).json({ data: rows });
+    res.status(201).json({ data: rows });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to get comments for this post" });

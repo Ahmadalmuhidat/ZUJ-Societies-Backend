@@ -1,7 +1,7 @@
 const pool = require("../config/database");
 const mailer = require("../services/mailer");
 const passwords_helper = require("../helper/passwords")
-const json_web_token = require("../helper/json_web_token")
+const jsonWebToken = require("../helper/json_web_token")
 const { v4: uuidv4 } = require("uuid");
 
 exports.login = async (req, res) => {
@@ -12,7 +12,8 @@ exports.login = async (req, res) => {
       SELECT
         ID,
         Password,
-        Name
+        Name,
+        Email
       FROM
         Users
       WHERE
@@ -26,7 +27,11 @@ exports.login = async (req, res) => {
       const isPasswordCorrect = await passwords_helper.verify_password(password, user.Password);
 
       if (isPasswordCorrect) {
-        const token = json_web_token.generate_token({ id: user.ID });
+        const token = jsonWebToken.generate_token({
+          id: user.ID,
+          name: user.Name,
+          email: user.Email
+        });
         return res.status(200).json({ data: token });
       } else {
         return res.status(401).json({ error: "Password is incorrect" });
@@ -72,7 +77,12 @@ exports.register = async (req, res) => {
       create_date
     ];
 
-    // mailer.send_email(req.body.email, "welcone to zuj societies", "welcome");
+    // mailer.sendEmail(
+    //   req.body.email,
+    //   "welcone to zuj societies",
+    //   "welcome"
+    // );
+
     const [results] = await pool.query(sql_query, data);
     res.status(201).json({ data: results });
   } catch (err) {

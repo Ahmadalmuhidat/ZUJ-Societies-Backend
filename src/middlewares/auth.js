@@ -1,6 +1,6 @@
-const json_web_token = require('../helper/json_web_token');
+const jsonWebToken = require('../helper/json_web_token');
 
-function check_user_logged_in(req, res, next) {
+function checkUserLoggedIn(req, res, next) {
   // Try to get the token from headers, body, or query
   const token =
     req.headers['authorization']?.split(' ')[1] || // Bearer <token>
@@ -12,7 +12,7 @@ function check_user_logged_in(req, res, next) {
   }
 
   // Verify the token
-  const valid = json_web_token.verify_token(token);
+  const valid = jsonWebToken.verify_token(token);
 
   if (valid) {
     // Optionally: attach decoded user to request for later use
@@ -24,5 +24,5 @@ function check_user_logged_in(req, res, next) {
 }
 
 module.exports = {
-  check_user_logged_in
+  checkUserLoggedIn
 };

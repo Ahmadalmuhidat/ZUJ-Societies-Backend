@@ -1,8 +1,8 @@
 const pool = require("../config/database");
 const { v4: uuidv4 } = require("uuid");
-const json_web_token = require("../helper/json_web_token")
+const jsonWebToken = require("../helper/json_web_token")
 
-exports.get_all_posts = async (req, res) => { // fix, get from socities that he is in
+exports.getAllPosts = async (req, res) => {
   try {
     const sql_query = `
       SELECT
@@ -14,14 +14,32 @@ exports.get_all_posts = async (req, res) => { // fix, get from socities that he 
         Societies.Name AS Society_Name,
         Posts.User,
         Users.Name AS User_Name,
-        Users.Photo AS User_Image
-      FROM Posts
-      JOIN Societies ON Posts.Society = Societies.ID
-      JOIN Users ON Posts.User = Users.ID
-      JOIN Societies_Memebers ON Societies_Memebers.Society = Societies.ID AND Societies_Memebers.User = Users.ID
-      WHERE Societies_Memebers.User = ?
+        Users.Photo AS User_Image,
+        CASE WHEN Likes.ID IS NOT NULL THEN 1 ELSE 0 END AS Is_Liked
+      FROM
+        Posts
+      JOIN
+        Societies
+      ON
+        Posts.Society = Societies.ID
+      JOIN
+        Users
+      ON
+        Posts.User = Users.ID
+      JOIN
+        Societies_Memebers
+      ON
+        Societies_Memebers.Society = Societies.ID
+      LEFT JOIN
+        Likes
+      ON
+        Likes.Post = Posts.ID
+      AND
+        Likes.User = Societies_Memebers.User
+      WHERE
+        Societies_Memebers.User = ?
     `;
-    const [rows] = await pool.query(sql_query, [json_web_token.verify_token(req.query.token)['id']]);
+    const [rows] = await pool.query(sql_query, [jsonWebToken.verify_token(req.query.token)['id']]);
     res.status(200).json({ data: rows });
   } catch (err) {
     console.error(err);
@@ -29,7 +47,7 @@ exports.get_all_posts = async (req, res) => { // fix, get from socities that he 
   }
 };
 
-exports.create_post = async (req, res) => {
+exports.createPost = async (req, res) => {
   try {
     const sql_query = `
       INSERT INTO
@@ -50,7 +68,7 @@ exports.create_post = async (req, res) => {
       req.body.content,
       initial_likes,
       initial_comments,
-      json_web_token.verify_token(req.body.token)['id'],
+      jsonWebToken.verify_token(req.body.token)['id'],
       req.body.image
     ];
 
@@ -62,7 +80,7 @@ exports.create_post = async (req, res) => {
   }
 };
 
-exports.delete_post = async (req, res) => {
+exports.deletePost = async (req, res) => {
   try {
     const sql_query = `
       DELETE FROM
@@ -82,7 +100,7 @@ exports.delete_post = async (req, res) => {
   }
 };
 
-exports.get_posts_by_society = async (req, res) => {
+exports.getPostsBySociety = async (req, res) => {
   try {
     const sql_query = `
       SELECT
@@ -93,13 +111,18 @@ exports.get_posts_by_society = async (req, res) => {
         Posts.Comments,
         Posts.User,
         Users.Name AS User_Name,
-        Users.Photo AS User_Image
+        Users.Photo AS User_Image,
+        CASE WHEN Likes.ID IS NOT NULL THEN 1 ELSE 0 END AS Is_Liked
       FROM
         Posts
       JOIN
         Users
       ON
         Posts.User = Users.ID
+      LEFT JOIN
+        Likes
+      ON
+        Likes.Post = Posts.ID
       WHERE
         Posts.Society = ?
     `;
@@ -112,4 +135,39 @@ exports.get_posts_by_society = async (req, res) => {
   }
 };
 
-// add likes routes
+exports.likePost = async (req, res) => {
+  try {
+    const userId = jsonWebToken.verify_token(req.body.token)['id'];
+    const postId = req.body.post_id;
+
+    const checkQuery = `
+      SELECT 1 FROM Likes
+      WHERE User = ? AND Post = ?
+      LIMIT 1
+    `;
+    const [existing] = await pool.query(checkQuery, [userId, postId]);
+
+    if (existing.length > 0) {
+      return res.status(400).json({ error_message: "User already liked this post" });
+    }
+
+    const insertQuery = `
+      INSERT INTO Likes (ID, User, Post)
+      VALUES (?, ?, ?)
+    `;
+    await pool.query(insertQuery, [uuidv4(), userId, postId]);
+
+    const increaseQuery = `
+      UPDATE Posts
+      SET Likes = Likes + 1
+      WHERE ID = ?
+    `;
+    await pool.query(increaseQuery, [postId]);
+
+    res.status(200).json({ data: true });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error_message: "Failed to like post" });
+  }
+};
