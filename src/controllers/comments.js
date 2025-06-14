@@ -19,7 +19,7 @@ exports.createComment = async (req, res) => {
       uuidv4(),
       req.body.content,
       req.body.post_id,
-      jsonWebToken.verify_token(req.body.User_id)['id']
+      jsonWebToken.verify_token(req.body.token)['id']
     ];
 
     const [results] = await pool.query(sql_query, data);

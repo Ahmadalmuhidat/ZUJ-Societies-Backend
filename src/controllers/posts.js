@@ -58,6 +58,8 @@ exports.createPost = async (req, res) => {
         ?,
         ?,
         ?,
+        ?,
+        ?,
         ?
       )
     `;
@@ -69,7 +71,8 @@ exports.createPost = async (req, res) => {
       initial_likes,
       initial_Comments,
       jsonWebToken.verify_token(req.body.token)['id'],
-      req.body.image
+      req.body.image,
+      req.body.society_id,
     ];
 
     const [results] = await pool.query(sql_query, data);

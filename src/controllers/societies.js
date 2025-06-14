@@ -157,7 +157,7 @@ exports.searchSociety = async (req, res) => {
     FROM
       Societies
     WHERE
-      Name = ?
+      Name LIKE ?
     `;
     const data = [req.query.search_term];
     const [rows] = await pool.query(sql_query, data);
@@ -174,7 +174,7 @@ exports.joinSocietyRequest = async (req, res) => {
     const request_status = "pending";
     const sql_query = `
     INSERT INTO
-      Societies_Join_Request
+      Societies_Join_Requests
     VALUES
     (
       ?,
@@ -205,7 +205,7 @@ exports.approveRequest = async (req, res) => {
       User,
       Society
     FROM
-      Societies_Join_Request
+      Societies_Join_Requests
     WHERE
       ID = ?
     `;
@@ -218,7 +218,7 @@ exports.approveRequest = async (req, res) => {
     if (results.length > 0) {
       sql_query = `
         UPDATE
-          Societies_Join_Request
+          Societies_Join_Requests
         SET
           Status = 'approved'
         WHERE
@@ -262,7 +262,7 @@ exports.rejectRequest = async (req, res) => {
   try {
     const sql_query = `
     UPDATE
-      Societies_Join_Request
+      Societies_Join_Requests
     SET
       Status = 'rejected'
     WHERE
@@ -284,21 +284,21 @@ exports.getAllJoinRequests = async (req, res) => {
   try {
     const sql_query = `
       SELECT
-        Societies_Join_Request.ID AS Request_ID,
-        Societies_Join_Request.Status,
+        Societies_Join_Requests.ID AS Request_ID,
+        Societies_Join_Requests.Status,
         Users.ID AS User_ID,
         Users.Name AS User_Name,
         Users.Email AS User_Email,
         Users.Photo AS User_Photo,
-        Societies_Join_Request.Status
+        Societies_Join_Requests.Status
       FROM
-        Societies_Join_Request
+        Societies_Join_Requests
       JOIN
         Users
       ON
-        Societies_Join_Request.User = Users.ID
+        Societies_Join_Requests.User = Users.ID
       WHERE
-        Societies_Join_Request.Society = ?
+        Societies_Join_Requests.Society = ?
     `;
     const data = [
       req.query.society_id,

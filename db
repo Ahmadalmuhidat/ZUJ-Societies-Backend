@@ -30,7 +30,7 @@ Name varchar(200)
 Description varchar(200) 
 User varchar(200)
 
-Table: Societies_Join_Request
+Table: Societies_Join_Requests
 Columns:
 ID varchar(200) 
 Society varchar(200) 

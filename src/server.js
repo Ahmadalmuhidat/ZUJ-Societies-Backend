@@ -12,6 +12,8 @@ app.use(bodyParser.json());
 app.use(cors());
 app.use('/', routes);
 
+app.use(express.json());
+
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send('Something went wrong!');

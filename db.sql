@@ -145,13 +145,13 @@ INSERT INTO `Societies` VALUES ('38add9a2-4fe1-4899-81ed-6514c386720b','drtgvber
 UNLOCK TABLES;
 
 --
--- Table structure for table `Societies_Join_Request`
+-- Table structure for table `Societies_Join_Requests`
 --
 
-DROP TABLE IF EXISTS `Societies_Join_Request`;
+DROP TABLE IF EXISTS `Societies_Join_Requests`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `Societies_Join_Request` (
+CREATE TABLE `Societies_Join_Requests` (
   `ID` varchar(200) DEFAULT NULL,
   `Society` varchar(200) DEFAULT NULL,
   `User` varchar(200) DEFAULT NULL,
@@ -160,13 +160,13 @@ CREATE TABLE `Societies_Join_Request` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `Societies_Join_Request`
+-- Dumping data for table `Societies_Join_Requests`
 --
 
-LOCK TABLES `Societies_Join_Request` WRITE;
-/*!40000 ALTER TABLE `Societies_Join_Request` DISABLE KEYS */;
-INSERT INTO `Societies_Join_Request` VALUES ('f0fb8842-a330-40f2-a4c1-5ccd09c3699a','38add9a2-4fe1-4899-81ed-6514c386720b','4f454cce-d807-4b0b-800b-a1fa468a0b03','approved');
-/*!40000 ALTER TABLE `Societies_Join_Request` ENABLE KEYS */;
+LOCK TABLES `Societies_Join_Requests` WRITE;
+/*!40000 ALTER TABLE `Societies_Join_Requests` DISABLE KEYS */;
+INSERT INTO `Societies_Join_Requests` VALUES ('f0fb8842-a330-40f2-a4c1-5ccd09c3699a','38add9a2-4fe1-4899-81ed-6514c386720b','4f454cce-d807-4b0b-800b-a1fa468a0b03','approved');
+/*!40000 ALTER TABLE `Societies_Join_Requests` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --

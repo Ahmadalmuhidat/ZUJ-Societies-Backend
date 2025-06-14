@@ -59,6 +59,7 @@ exports.getEventInfo = async (req, res) => {
 
 exports.searchEvent = async (req, res) => {
   try {
+    const searchTerm = `%${req.query.search_term}%`; // Wrap with % for partial match
     const sql_query = `
       SELECT
         ID,
@@ -72,11 +73,10 @@ exports.searchEvent = async (req, res) => {
       FROM
         Events
       WHERE
-        Title = ?
+        Title LIKE ?
     `;
-    const data = [req.query.search_term];
-    const [rows] = await pool.query(sql_query, data);
-    res.status(201).json({ data: rows });
+    const [rows] = await pool.query(sql_query, [searchTerm]);
+    res.status(200).json({ data: rows });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to get Events" });
