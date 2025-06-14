@@ -1,32 +1,35 @@
-# Step 1: Build the React app
+# Use an official Node.js runtime as a parent image (Alpine for minimal footprint)
 FROM node:18-alpine as build
 
 # Set working directory
 WORKDIR /app
 
-# Copy dependency definitions
+# Copy only package files to install dependencies first (layer caching)
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci
+# Install only production dependencies
+RUN npm ci --omit=dev
 
-# Copy the rest of the source code
+# Copy the rest of the application
 COPY . .
 
-# Build the React app for production
-RUN npm run build
+# Optional: Run build script if you use TypeScript or build tools
+# RUN npm run build
 
-# Step 2: Serve with a production web server (nginx)
-FROM nginx:stable-alpine as production
+# Use a smaller, non-root image for runtime
+FROM node:18-alpine
 
-# Copy built React app from build stage
-COPY --from=build /app/build /usr/share/nginx/html
+# Set working directory
+WORKDIR /app
 
-# Copy custom nginx config (optional)
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy only production node_modules and app files from build stage
+COPY --from=build /app /app
 
-# Expose the port nginx runs on
-EXPOSE 80
+# Ensure the app does not run as root
+USER node
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Expose app port (adjust if needed)
+EXPOSE 3000
+
+# Start the app
+CMD ["node", "index.js"]
