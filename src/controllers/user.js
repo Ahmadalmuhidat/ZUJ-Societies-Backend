@@ -1,47 +1,42 @@
-const pool = require("../config/database");
-const jsonWebToken = require("../helper/json_web_token")
+const User = require("../models/users");
+const Post = require("../models/posts");
+const Event = require("../models/events");
+const Society = require("../models/societies");
+const jsonWebToken = require("../helper/json_web_token");
 
 exports.getUserInformation = async (req, res) => {
   try {
-    const sql_query = `
-      SELECT
-        ID,
-        Name,
-        Email
-      FROM
-        Users
-      WHERE
-        ID = ?
-    `
-    const [rows] = await pool.query(sql_query, [jsonWebToken.verify_token(req.query.token)['id']]);
-    res.status(201).json({ data: rows[0] });
+    const userId = jsonWebToken.verify_token(req.query.token)['id'];
+    const user = await User.findOne({ ID: userId }, 'ID Name Email');
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.status(201).json({ data: user });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error_message: "Failed to get Users" });
+    res.status(500).json({ error_message: "Failed to get User" });
   }
 };
 
 exports.getUserProfileInformation = async (req, res) => {
   try {
-    const sql_query = `
-      SELECT
-        Users.ID,
-        Users.Name,
-        Users.Email,
-        Users.Phone_Number,
-        Users.Bio,
-        Users.Photo,
-        Users.Create_Date,
-        (SELECT COUNT(*) FROM Societies WHERE Societies.User = Users.ID) AS Society_Count,
-        (SELECT COUNT(*) FROM Posts WHERE Posts.User = Users.ID) AS Post_Count,
-        (SELECT COUNT(*) FROM Events WHERE Events.User = Users.ID) AS Event_Count
-      FROM
-        Users
-      WHERE
-        Users.ID = ?
-    `
-    const [rows] = await pool.query(sql_query, [jsonWebToken.verify_token(req.query.token)['id']]);
-    res.status(201).json({ data: rows[0] });
+    const userId = jsonWebToken.verify_token(req.query.token)['id'];
+    const user = await User.findOne({ ID: userId }, 'ID Name Email PhoneNumber Bio Photo CreatedAt');
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const [postCount, eventCount, societyCount] = await Promise.all([
+      Post.countDocuments({ User: userId }),
+      Event.countDocuments({ User: userId }),
+      Society.countDocuments({ User: userId })
+    ]);
+
+    res.status(201).json({
+      data: {
+        ...user.toObject(),
+        Post_Count: postCount,
+        Event_Count: eventCount,
+        Society_Count: societyCount
+      }
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to get User profile" });
@@ -50,28 +45,21 @@ exports.getUserProfileInformation = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   try {
-    const sql_query = `
-      UPDATE
-        Users
-      SET
-        Name = ?,
-        Email = ?,
-        Phone_Number = ?,
-        Bio = ?
-      WHERE
-        Users.ID = ?
-    `
-    const data = [
-      req.body.name,
-      req.body.email,
-      req.body.phone,
-      req.body.bio,
-      jsonWebToken.verify_token(req.body.token)['id']
-    ];
-    const [results] = await pool.query(sql_query, data);
-    res.status(200).json({ data: results });
+    const userId = jsonWebToken.verify_token(req.body.token)['id'];
+    const updateData = {
+      Name: req.body.name,
+      Email: req.body.email,
+      PhoneNumber: req.body.phone,
+      Bio: req.body.bio
+    };
+
+    const result = await User.findOneAndUpdate({ ID: userId }, updateData, { new: true });
+
+    if (!result) return res.status(404).json({ error: "User not found" });
+
+    res.status(200).json({ data: result });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error_message: "Failed to get User profile" });
+    res.status(500).json({ error_message: "Failed to update User profile" });
   }
 };
