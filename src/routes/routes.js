@@ -28,7 +28,7 @@ router.get('/societies/get_society_info', authMiddleware.checkUserLoggedIn, soci
 
 router.get('/societies/get_all_societies', authMiddleware.checkUserLoggedIn, societiesController.getAllSocieties);
 
-router.get('/societies/search_society', authMiddleware.checkUserLoggedIn, societiesController.searchSociety);
+// router.get('/societies/search_society', authMiddleware.checkUserLoggedIn, societiesController.searchSociety);
 
 router.post('/societies/create_society', authMiddleware.checkUserLoggedIn, societiesController.createSociety);
 

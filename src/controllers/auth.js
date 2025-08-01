@@ -1,44 +1,31 @@
-const pool = require("../config/database");
-const mailer = require("../services/mailer");
-const passwords_helper = require("../helper/passwords")
-const jsonWebToken = require("../helper/json_web_token")
+const User = require("../models/users");
+const passwords_helper = require("../helper/passwords");
+const jsonWebToken = require("../helper/json_web_token");
 const { v4: uuidv4 } = require("uuid");
 
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.query;
 
-    const sqlQuery = `
-      SELECT
-        ID,
-        Password,
-        Name,
-        Email
-      FROM
-        Users
-      WHERE
-        Email = ?
-    `;
+    const user = await User.findOne({ Email: email });
 
-    const [results] = await pool.execute(sqlQuery, [email]);
-
-    if (results.length > 0) {
-      const User = results[0];
-      const isPasswordCorrect = await passwords_helper.verify_password(password, User.Password);
-
-      if (isPasswordCorrect) {
-        const token = jsonWebToken.generate_token({
-          id: User.ID,
-          name: User.Name,
-          email: User.Email
-        });
-        return res.status(201).json({ data: token });
-      } else {
-        return res.status(401).json({ error: "Password is incorrect" });
-      }
-    } else {
+    if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
+
+    const isPasswordCorrect = await passwords_helper.verify_password(password, user.Password);
+
+    if (!isPasswordCorrect) {
+      return res.status(401).json({ error: "Password is incorrect" });
+    }
+
+    const token = jsonWebToken.generate_token({
+      id: user.ID,
+      name: user.Name,
+      email: user.Email
+    });
+
+    return res.status(201).json({ data: token });
 
   } catch (error) {
     console.error(error);
@@ -48,37 +35,21 @@ exports.login = async (req, res) => {
 
 exports.register = async (req, res) => {
   try {
-    const sql_query = `
-      INSERT INTO
-        Users
-      VALUES
-      (
-        ?,
-        ?,
-        ?,
-        ?,
-        ?,
-        ?,
-        ?,
-        ?,
-        ?
-      )
-    `;
-    const create_date =  new Date().toISOString().slice(0, 10);;
-    const data = [
-      uuidv4(),
-      req.body.name,
-      req.body.email,
-      await passwords_helper.hash_password(req.body.password),
-      req.body.student_id,
-      req.body.photo,
-      req.body.bio,
-      req.body.phone_number,
-      create_date
-    ];
+    const newUser = new User({
+      ID: uuidv4(),
+      Name: req.body.name,
+      Email: req.body.email,
+      Password: await passwords_helper.hash_password(req.body.password),
+      StudentID: req.body.student_id,
+      Photo: req.body.photo,
+      Bio: req.body.bio,
+      PhoneNumber: req.body.phone_number || "0000",
+      CreatedAt: new Date()
+    });
 
-    const [results] = await pool.query(sql_query, data);
-    res.status(201).json({ data: results });
+    const savedUser = await newUser.save();
+    res.status(201).json({ data: savedUser });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to create User" });
