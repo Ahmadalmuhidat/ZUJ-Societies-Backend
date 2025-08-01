@@ -4,7 +4,7 @@ pipeline {
   environment {
     DOCKER_IMAGE = "zuj-societies-backend"
     DOCKER_CONTAINER = "zuj-societies-backend"
-    MONGO_URI = "mongodb://localhost:27017/zuj_societies"
+    MONGO_URI = "mongodb://34.29.161.87:27017/zuj_societies"
     EMAIL_USER="ahmad.almuhidat@gmail.com"
     EMAIL_PASS="lgau oofs jhky eelv"
   }
