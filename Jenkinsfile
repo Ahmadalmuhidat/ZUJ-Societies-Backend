@@ -4,10 +4,9 @@ pipeline {
   environment {
     DOCKER_IMAGE = "zuj-societies-backend"
     DOCKER_CONTAINER = "zuj-societies-backend"
-    MONGO_URI="mongodb://localhost:27017/zuj_societies"
-    EMAIL_USER="ahmad.almuhidat@gmail.com"
-    EMAIL_PASS="lgau oofs jhky eelv"
-    JWT_SECRET = credentials('jwt-secret-id') // Jenkins credentials (type: Secret Text)
+    MONGO_URI = "mongodb://localhost:27017/zuj_societies"
+    EMAIL_USER = "ahmad.almuhidat@gmail.com"
+    EMAIL_PASS = "lgau oofs jhky eelv"
   }
 
   stages {
@@ -37,16 +36,18 @@ pipeline {
     stage('Run Container') {
       steps {
         echo "Running container ${DOCKER_CONTAINER}..."
-        sh """
-          docker run -d \\
-            --name ${DOCKER_CONTAINER} \\
-            -p 4000:4000 \\
-            -e JWT_SECRET=${JWT_SECRET} \\
-            -e MONGO_URI=${MONGO_URI} \\
-            -e EMAIL_USER=${EMAIL_USER} \\
-            -e EMAIL_PASS=${EMAIL_PASS} \\
-            ${DOCKER_IMAGE}:latest
-        """
+        withCredentials([string(credentialsId: 'jwt-secret-id', variable: 'JWT_SECRET')]) {
+          sh """
+            docker run -d \\
+              --name ${DOCKER_CONTAINER} \\
+              -p 4000:4000 \\
+              -e JWT_SECRET=$JWT_SECRET \\
+              -e MONGO_URI=${MONGO_URI} \\
+              -e EMAIL_USER=${EMAIL_USER} \\
+              -e EMAIL_PASS=${EMAIL_PASS} \\
+              ${DOCKER_IMAGE}:latest
+          """
+        }
       }
     }
   }
