@@ -26,15 +26,15 @@ pipeline {
         withCredentials([
           string(credentialsId: 'zuj-societies-jwt-secret', variable: 'JWT_SECRET')
         ]) {
-          sh '''
+          sh """
             docker run -d --name ${DOCKER_CONTAINER} \
               -p 4000:4000 \
-              -e JWT_SECRET="${JWT_SECRET}" \
-              -e MONGO_URI="${MONGO_URI}" \
-              -e EMAIL_USER="${EMAIL_USER}" \
-              -e EMAIL_PASS="${EMAIL_PASS}" \
+              -e JWT_SECRET='${JWT_SECRET}' \
+              -e MONGO_URI='${MONGO_URI}' \
+              -e EMAIL_USER='${EMAIL_USER}' \
+              -e EMAIL_PASS='${EMAIL_PASS}' \
               ${DOCKER_IMAGE}:latest
-          '''
+          """
         }
       }
     }
