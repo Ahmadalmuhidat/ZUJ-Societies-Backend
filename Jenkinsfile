@@ -5,6 +5,8 @@ pipeline {
     DOCKER_IMAGE = "zuj-societies-backend"
     DOCKER_CONTAINER = "zuj-societies-backend"
     MONGO_URI = "mongodb://localhost:27017/zuj_societies"
+    EMAIL_USER="ahmad.almuhidat@gmail.com"
+    EMAIL_PASS="lgau oofs jhky eelv"
   }
 
   stages {
@@ -22,9 +24,7 @@ pipeline {
       steps {
         echo "Running container ${DOCKER_CONTAINER}..."
         withCredentials([
-          string(credentialsId: 'zuj-societies-jwt-secret', variable: 'JWT_SECRET'),
-          string(credentialsId: 'email-user', variable: 'EMAIL_USER'),
-          string(credentialsId: 'email-pass', variable: 'EMAIL_PASS')
+          string(credentialsId: 'zuj-societies-jwt-secret', variable: 'JWT_SECRET')
         ]) {
           sh '''
             docker run -d --name ${DOCKER_CONTAINER} \
