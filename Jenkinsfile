@@ -22,7 +22,7 @@ pipeline {
       steps {
         echo "Running container ${DOCKER_CONTAINER}..."
         withCredentials([
-          string(credentialsId: 'jwt-secret-id', variable: 'JWT_SECRET'),
+          string(credentialsId: 'zuj-societies-jwt-secret', variable: 'JWT_SECRET'),
           string(credentialsId: 'email-user', variable: 'EMAIL_USER'),
           string(credentialsId: 'email-pass', variable: 'EMAIL_PASS')
         ]) {
