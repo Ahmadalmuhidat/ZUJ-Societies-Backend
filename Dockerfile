@@ -9,9 +9,6 @@ RUN npm install --omit=dev
 
 COPY . .
 
-# Uncomment if you have build step
-RUN npm run build
-
 # Stage 2: Runtime
 FROM node:18-alpine
 
