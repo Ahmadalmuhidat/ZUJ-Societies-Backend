@@ -1,8 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-// const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_SECRET = 'b9d4c4f4a13de41d9fe784e4f2107d5c8b8f2d2b3c56a6f73f396da7468b6c417c087ceae2142f8b6ba7e5da028581ba774b3c0c536dc8ff4e8e907f943f4a6e2'
-
+const JWT_SECRET = process.env.JWT_SECRET;
 
 if (!JWT_SECRET) {
   throw new Error("JWT_SECRET is not set in environment variables.");
