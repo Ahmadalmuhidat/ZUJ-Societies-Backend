@@ -1,5 +1,4 @@
 const User = require("../models/users");
-const mailer = require("../services/mailer");
 const passwords_helper = require("../helper/passwords");
 const jsonWebToken = require("../helper/json_web_token");
 const { v4: uuidv4 } = require("uuid");

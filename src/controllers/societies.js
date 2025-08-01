@@ -1,6 +1,7 @@
 const Society = require("../models/societies");
 const SocietyMember = require("../models/societyMembers");
 const SocietyJoinRequest = require("../models/societyJoinRequests");
+const SocietyInvite = require('../models/SocietyInvite');
 const User = require("../models/users");
 const { v4: uuidv4 } = require("uuid");
 const jsonWebToken = require("../helper/json_web_token");
@@ -21,14 +22,86 @@ exports.getSocietyInformation = async (req, res) => {
   }
 };
 
+// Invite user to society
+exports.inviteMemberToSociety = async (req, res) => {
+  try {
+    const { SocietyID, InviteeID, token } = req.body;
+
+    // Step 1: Authenticate inviter
+    const decoded = jsonWebToken.verify_token(token);
+    const inviterID = decoded.id;
+
+    // Step 2: Get society
+    const society = await Society.findOne({ ID: SocietyID });
+    if (!society) {
+      return res.status(404).json({ error_message: 'Society not found' });
+    }
+
+    // Step 3: Check inviter's role
+    const inviterMember = await SocietyMember.findOne({ Society: SocietyID, User: inviterID });
+    if (!inviterMember) {
+      return res.status(403).json({ error_message: 'You are not a member of this society' });
+    }
+
+    const whoCanInvite = society.Permissions?.whoCanInvite || 'all-members';
+    const inviterRole = inviterMember.Role;
+
+    const canInvite =
+      (whoCanInvite === 'all-members') ||
+      (whoCanInvite === 'moderators' && ['moderator', 'admin'].includes(inviterRole)) ||
+      (whoCanInvite === 'admins' && inviterRole === 'admin');
+
+    if (!canInvite) {
+      return res.status(403).json({ error_message: 'You do not have permission to invite members' });
+    }
+
+    // Step 4: Check if the user is already a member
+    const isAlreadyMember = await SocietyMember.findOne({ Society: SocietyID, User: InviteeID });
+    if (isAlreadyMember) {
+      return res.status(400).json({ error_message: 'User is already a member of this society' });
+    }
+
+    // Step 5: Check if already invited
+    const existingInvite = await SocietyInvite.findOne({
+      Society: SocietyID,
+      Invitee: InviteeID,
+      Status: 'pending'
+    });
+
+    if (existingInvite) {
+      return res.status(400).json({ error_message: 'User has already been invited' });
+    }
+
+    // Step 6: Create invite
+    const invite = new SocietyInvite({
+      ID: uuidv4(),
+      Society: SocietyID,
+      Inviter: inviterID,
+      Invitee: InviteeID,
+      Status: 'pending',
+      CreatedAt: new Date()
+    });
+
+    await invite.save();
+
+    res.status(201).json({ message: 'Invitation sent successfully', invite });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error_message: 'Failed to send invitation' });
+  }
+};
+
 // Get all societies
 exports.getAllSocieties = async (req, res) => {
   try {
-    const societies = await Society.find();
+    // Only fetch societies that are NOT private
+    const societies = await Society.find({ 'Privacy.visibility': { $ne: 'private' } });
+
     res.status(200).json({ data: societies });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error_message: "Failed to get societies" });
+    res.status(500).json({ error_message: 'Failed to get societies' });
   }
 };
 

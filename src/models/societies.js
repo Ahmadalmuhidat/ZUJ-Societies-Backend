@@ -35,7 +35,7 @@ const societySchema = new mongoose.Schema({
     whoCanInvite: {
       type: String,
       enum: ['admins', 'moderators', 'all-members'],
-      default: 'all-members'
+      default: 'admins'
     }
   },
 

@@ -21,7 +21,7 @@ exports.getEventInfo = async (req, res) => {
     if (!event) return res.status(404).json({ error_message: "Event not found" });
 
     const organizer = await User.findOne({ ID: event.User }).select("Name").lean();
-    res.status(201).json({ data: { ...event, Organizer: organizer?.Name || null } });
+    res.status(200).json({ data: { ...event, Organizer: organizer?.Name || null } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to get Event info" });
@@ -78,7 +78,7 @@ exports.createEvent = async (req, res) => {
 exports.deleteEvent = async (req, res) => {
   try {
     const result = await Event.deleteOne({ ID: req.query.event_id });
-    res.status(201).json({ data: result });
+    res.status(200).json({ data: result });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to delete event" });
@@ -101,7 +101,7 @@ exports.getEventsBySociety = async (req, res) => {
       };
     });
 
-    res.status(201).json({ data: result });
+    res.status(200).json({ data: result });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to get Events for this society" });
