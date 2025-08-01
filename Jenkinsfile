@@ -34,7 +34,7 @@ pipeline {
       steps {
         echo "Running container ${DOCKER_CONTAINER}..."
         sh """
-          docker run -d --name ${DOCKER_CONTAINER} -p 3000:3000 ${DOCKER_IMAGE}:latest
+          docker run -d --name ${DOCKER_CONTAINER} -p 4000:4000 ${DOCKER_IMAGE}:latest
         """
       }
     }
