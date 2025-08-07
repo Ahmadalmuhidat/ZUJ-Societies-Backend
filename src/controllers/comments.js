@@ -15,7 +15,7 @@ exports.createComment = async (req, res) => {
     });
 
     await newComment.save();
-    res.status(200).json({ data: newComment });
+    res.status(201).json({ data: newComment });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to create comment" });
@@ -25,7 +25,7 @@ exports.createComment = async (req, res) => {
 exports.deleteComment = async (req, res) => {
   try {
     const result = await Comment.deleteOne({ ID: req.query.comment_id });
-    res.status(201).json({ data: result });
+    res.status(204).json({ data: result });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to delete comment" });
@@ -52,7 +52,7 @@ exports.getCommentsByPost = async (req, res) => {
       };
     });
 
-    res.status(201).json({ data });
+    res.status(200).json({ data });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to get Comments for this post" });

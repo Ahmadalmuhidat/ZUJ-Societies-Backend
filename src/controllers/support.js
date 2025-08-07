@@ -16,7 +16,7 @@ exports.CreateTicket = async (req, res) => {
     });
 
     await newTicket.save();
-    res.status(200).json({ data: newTicket });
+    res.status(201).json({ data: newTicket });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to create ticket" });

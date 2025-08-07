@@ -163,7 +163,7 @@ exports.createSociety = async (req, res) => {
 exports.deleteSociety = async (req, res) => {
   try {
     const result = await Society.deleteOne({ ID: req.query.society_id });
-    res.status(201).json({ data: result });
+    res.status(204).json({ data: result });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to delete society" });
@@ -192,7 +192,7 @@ exports.getSocietiesByUser = async (req, res) => {
       })
     ];
 
-    res.status(201).json({ data: combined });
+    res.status(200).json({ data: combined });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to get societies for the user" });
@@ -203,14 +203,29 @@ exports.getSocietiesByUser = async (req, res) => {
 exports.joinSocietyRequest = async (req, res) => {
   try {
     const userId = jsonWebToken.verify_token(req.body.token)['id'];
+
+    // Check if the user already sent a join request
+    const existingRequest = await SocietyJoinRequest.findOne({
+      User: userId,
+      Society: req.body.society_id,
+      Status: { $in: ["pending", "approved"] } // Optional: include "approved" to prevent repeat joins
+    });
+
+    if (existingRequest) {
+      return res.status(400).json({ error_message: "You have already requested to join this society." });
+    }
+
+    // Create new request
     const newRequest = new SocietyJoinRequest({
       ID: uuidv4(),
       Society: req.body.society_id,
       User: userId,
       Status: "pending"
     });
+
     const saved = await newRequest.save();
-    res.status(200).json({ data: saved });
+    res.status(201).json({ data: saved });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to join society" });
@@ -236,7 +251,7 @@ exports.approveRequest = async (req, res) => {
 
     // TODO: Send acceptance email here via mailer service
 
-    res.status(201).json({ data: newMember });
+    res.status(204).json({ data: newMember });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to approve request" });
@@ -252,7 +267,7 @@ exports.rejectRequest = async (req, res) => {
     request.Status = 'rejected';
     await request.save();
 
-    res.status(201).json({ data: request });
+    res.status(204).json({ data: request });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to reject request" });
@@ -279,7 +294,7 @@ exports.getAllJoinRequests = async (req, res) => {
       };
     });
 
-    res.status(201).json({ data });
+    res.status(200).json({ data });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to get join requests" });
@@ -302,7 +317,7 @@ exports.getAllMembers = async (req, res) => {
         Role: m.Role
       };
     });
-    res.status(201).json({ data });
+    res.status(200).json({ data });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to get members" });
@@ -313,7 +328,7 @@ exports.getAllMembers = async (req, res) => {
 exports.removeMember = async (req, res) => {
   try {
     const result = await SocietyMember.deleteOne({ Society: req.query.society_id, User: req.query.user_id });
-    res.status(201).json({ data: result });
+    res.status(204).json({ data: result });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to remove member" });
@@ -325,7 +340,7 @@ exports.checkMembership = async (req, res) => {
   try {
     const userId = jsonWebToken.verify_token(req.query.token)['id'];
     const isMember = await SocietyMember.exists({ User: userId, Society: req.query.society_id });
-    res.status(201).json({ data: !!isMember });
+    res.status(200).json({ data: !!isMember });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to check membership" });
@@ -338,7 +353,10 @@ exports.updateInformation = async (req, res) => {
     const update = {
       Name: req.body.name,
       Description: req.body.description,
-      Category: req.body.category
+      Category: req.body.category,
+      Privacy: req.body.privacy,
+      Permissions: req.body.permissions,
+      Notifications: req.body.notifications
     };
 
     if (req.body.privacy) update.Privacy = req.body.privacy;
@@ -346,7 +364,7 @@ exports.updateInformation = async (req, res) => {
     if (req.body.notifications) update.Notifications = req.body.notifications;
 
     const result = await Society.updateOne({ ID: req.body.society_id }, update);
-    res.status(201).json({ data: result });
+    res.status(204).json({ data: result });
 
   } catch (err) {
     console.error(err);
@@ -361,7 +379,7 @@ exports.updateMemberRole = async (req, res) => {
       { User: req.body.member, Society: req.body.society_id },
       { Role: req.body.role }
     );
-    res.status(200).json({ data: result });
+    res.status(204).json({ data: result });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to update member role" });
@@ -373,7 +391,7 @@ exports.leaveSociety = async (req, res) => {
   try {
     const userId = jsonWebToken.verify_token(req.body.token)['id'];
     const result = await SocietyMember.deleteOne({ User: userId, Society: req.body.society_id });
-    res.status(200).json({ data: result });
+    res.status(204).json({ data: result });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to leave society" });

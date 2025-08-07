@@ -78,7 +78,7 @@ exports.createEvent = async (req, res) => {
 exports.deleteEvent = async (req, res) => {
   try {
     const result = await Event.deleteOne({ ID: req.query.event_id });
-    res.status(200).json({ data: result });
+    res.status(204).json({ data: result });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to delete event" });

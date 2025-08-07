@@ -25,7 +25,7 @@ exports.login = async (req, res) => {
       email: user.Email
     });
 
-    return res.status(201).json({ data: token });
+    return res.status(200).json({ data: token });
 
   } catch (error) {
     console.error(error);
