@@ -19,7 +19,11 @@ exports.getUserInformation = async (req, res) => {
 exports.getUserProfileInformation = async (req, res) => {
   try {
     const userId = jsonWebToken.verify_token(req.query.token)['id'];
-    const user = await User.findOne({ ID: userId }, 'ID Name Email Phone_Number Bio Photo CreatedAt');
+
+    const user = await User.findOne(
+      { ID: userId },
+      'ID Name Email Phone_Number Bio Photo CreatedAt Notifications Privacy'
+    );
 
     if (!user) return res.status(404).json({ error: "User not found" });
 
@@ -43,22 +47,30 @@ exports.getUserProfileInformation = async (req, res) => {
   }
 };
 
+
 exports.updateProfile = async (req, res) => {
   try {
     const userId = jsonWebToken.verify_token(req.body.token)['id'];
 
-    // Build update object only with fields provided
-    const updateData = {};
-    if (req.body.name) updateData.Name = req.body.name;
-    if (req.body.email) updateData.Email = req.body.email.toLowerCase();
-    if (req.body.phone) updateData.Phone_Number = req.body.phone;
-    if (req.body.bio) updateData.Bio = req.body.bio;
+    // Build update object dynamically
+    const updateData = {
+      ...(req.body.name && { Name: req.body.name }),
+      ...(req.body.email && { Email: req.body.email.toLowerCase() }),
+      ...(req.body.phone && { Phone_Number: req.body.phone }),
+      ...(req.body.bio && { Bio: req.body.bio }),
+      ...(req.body.notifications && { Notifications: req.body.notifications }),
+      ...(req.body.privacy && { Privacy: req.body.privacy })
+    };
 
-    const result = await User.findOneAndUpdate({ ID: userId }, updateData, { new: true });
+    const result = await User.findOneAndUpdate(
+      { ID: userId },
+      { $set: updateData },
+      { new: true }
+    );
 
     if (!result) return res.status(404).json({ error: "User not found" });
 
-    res.status(204).json({ data: result });
+    res.status(200).json({ data: result });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to update User profile" });

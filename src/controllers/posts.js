@@ -22,7 +22,7 @@ exports.getAllPosts = async (req, res) => {
     const societyMemberships = await SocietyMember.find({ User: userId }).select("Society");
     const societyIds = societyMemberships.map(m => m.Society);
 
-    const posts = await Post.find({ Society: { $in: societyIds } }).lean();
+    const posts = await Post.find({ Society: { $in: societyIds } }).sort({ CreatedAt: -1 }).lean();
     const userIds = [...new Set(posts.map(p => p.User.toString()))];
     const postIds = posts.map(p => p.ID);
 
@@ -133,7 +133,7 @@ exports.getPostsBySociety = async (req, res) => {
     if (!societyId) return res.status(400).json({ error_message: "Missing society_id" });
 
     // Fetch posts in society
-    const posts = await Post.find({ Society: societyId });
+    const posts = await Post.find({ Society: societyId }).sort({ CreatedAt: -1 });
 
     // Collect unique user IDs from posts
     const userIds = [...new Set(posts.map(p => p.User.toString()))];
