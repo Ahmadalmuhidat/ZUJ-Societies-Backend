@@ -5,14 +5,31 @@ pipeline {
     DOCKER_IMAGE = "zuj-societies-backend"
     DOCKER_CONTAINER = "zuj-societies-backend"
     MONGO_URI = "mongodb://34.29.161.87:27017/zuj_societies"
-    EMAIL_USER="ahmad.almuhidat@gmail.com"
-    EMAIL_PASS="lgau oofs jhky eelv"
+    EMAIL_USER = "ahmad.almuhidat@gmail.com"
+    EMAIL_PASS = "lgau oofs jhky eelv"
   }
 
   stages {
+
+    stage('Checkout Code') {
+      steps {
+        echo "Checking out latest code from repository..."
+        checkout scm
+      }
+    }
+
+    stage('Build Docker Image') {
+      steps {
+        echo "Building Docker image ${DOCKER_IMAGE}:latest..."
+        sh """
+          docker build -t ${DOCKER_IMAGE}:latest .
+        """
+      }
+    }
+
     stage('Stop & Remove Existing Container') {
       steps {
-        echo "Stopping old container if it exists"
+        echo "Stopping old container if it exists..."
         sh """
           docker stop ${DOCKER_CONTAINER} || true
           docker rm ${DOCKER_CONTAINER} || true
