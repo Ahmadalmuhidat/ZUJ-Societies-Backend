@@ -8,7 +8,7 @@ exports.getUserInformation = async (req, res) => {
   try {
     const userId = jsonWebToken.verify_token(req.query.token)['id'];
     const user = await User.findOne({ ID: userId }, 'ID Name Email');
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) return res.status(404).json({ error_message: "User not found" });
     res.status(200).json({ data: user });
   } catch (err) {
     console.error(err);
@@ -21,7 +21,7 @@ exports.getUserProfileInformation = async (req, res) => {
     const userId = jsonWebToken.verify_token(req.query.token)['id'];
     const user = await User.findOne({ ID: userId }, 'ID Name Email Phone_Number Bio Photo CreatedAt');
 
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) return res.status(404).json({ error_message: "User not found" });
 
     const [postCount, eventCount, societyCount] = await Promise.all([
       Post.countDocuments({ User: userId }),
@@ -56,7 +56,7 @@ exports.updateProfile = async (req, res) => {
 
     const result = await User.findOneAndUpdate({ ID: userId }, updateData, { new: true });
 
-    if (!result) return res.status(404).json({ error: "User not found" });
+    if (!result) return res.status(404).json({ error_message: "User not found" });
 
     res.status(204).json({ data: result });
   } catch (err) {

@@ -236,7 +236,7 @@ exports.joinSocietyRequest = async (req, res) => {
 exports.approveRequest = async (req, res) => {
   try {
     const request = await SocietyJoinRequest.findOne({ ID: req.body.request_id });
-    if (!request) return res.status(404).json({ error: "Request not found" });
+    if (!request) return res.status(404).json({ error_message: "Request not found" });
 
     request.Status = 'approved';
     await request.save();
@@ -262,7 +262,7 @@ exports.approveRequest = async (req, res) => {
 exports.rejectRequest = async (req, res) => {
   try {
     const request = await SocietyJoinRequest.findOne({ ID: req.body.request_id });
-    if (!request) return res.status(404).json({ error: "Request not found" });
+    if (!request) return res.status(404).json({ error_message: "Request not found" });
 
     request.Status = 'rejected';
     await request.save();

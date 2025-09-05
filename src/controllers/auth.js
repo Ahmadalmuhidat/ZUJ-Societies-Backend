@@ -10,13 +10,13 @@ exports.login = async (req, res) => {
     const user = await User.findOne({ Email: email });
 
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error_message: "User not found" });
     }
 
     const isPasswordCorrect = await passwords_helper.verify_password(password, user.Password);
 
     if (!isPasswordCorrect) {
-      return res.status(401).json({ error: "Password is incorrect" });
+      return res.status(401).json({ error_message: "Password is incorrect" });
     }
 
     const token = jsonWebToken.generate_token({
@@ -26,10 +26,9 @@ exports.login = async (req, res) => {
     });
 
     return res.status(200).json({ data: token });
-
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error_message: error.message });
   }
 };
 
