@@ -98,7 +98,22 @@ exports.getAllSocieties = async (req, res) => {
     // Only fetch societies that are NOT private
     const societies = await Society.find({ 'Privacy.visibility': { $ne: 'private' } });
 
-    res.status(200).json({ data: societies });
+    // Add MembersCount for each society
+    const societiesWithCount = await Promise.all(
+      societies.map(async (society) => {
+        const memberCount = await SocietyMember.countDocuments({ Society: society.ID });
+        return {
+          ID: society.ID,
+          Name: society.Name,
+          Description: society.Description,
+          Category: society.Category,
+          Image: society.Image,
+          MembersCount: memberCount
+        };
+      })
+    );
+
+    res.status(200).json({ data: societiesWithCount });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: 'Failed to get societies' });
