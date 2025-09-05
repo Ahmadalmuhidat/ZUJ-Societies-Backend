@@ -10,7 +10,6 @@ const jsonWebToken = require("../helper/json_web_token");
 exports.getAllPosts = async (req, res) => {
   try {
     const token = req.query.token;
-    if (!token) return res.status(401).json({ error_message: "Missing token" });
 
     let userId;
     try {
@@ -125,8 +124,6 @@ exports.getPostsBySociety = async (req, res) => {
   try {
     // Assume token passed in query or headers
     const token = req.query.token || req.headers.authorization?.split(' ')[1];
-    if (!token) return res.status(401).json({ error_message: "Missing token" });
-
     const userId = jsonWebToken.verify_token(token).id;
 
     const societyId = req.query.society_id;
