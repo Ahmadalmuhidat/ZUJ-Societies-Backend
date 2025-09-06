@@ -45,6 +45,7 @@ pipeline {
         ]) {
           sh """
             docker run -d --name ${DOCKER_CONTAINER} \
+              --restart unless-stopped \
               -p 4000:4000 \
               -e PORT=4000 \
               -e JWT_SECRET='${JWT_SECRET}' \
