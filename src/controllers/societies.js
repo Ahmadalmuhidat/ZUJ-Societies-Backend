@@ -362,6 +362,23 @@ exports.checkMembership = async (req, res) => {
   }
 };
 
+// Check if user is an Admin
+exports.checkAdmin = async (req, res) => {
+  try {
+    const userId = jsonWebToken.verify_token(req.query.token)['id'];
+    const isAdmin = await SocietyMember.exists({
+      User: userId,
+      Society: req.query.society_id,
+      Role: 'admin'
+    });
+
+    res.status(200).json({ data: !!isAdmin });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error_message: "Failed to check admin status" });
+  }
+};
+
 // Update society info
 exports.updateInformation = async (req, res) => {
   try {

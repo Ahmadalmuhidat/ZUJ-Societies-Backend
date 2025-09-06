@@ -52,6 +52,8 @@ router.delete('/societies/remove_member', authMiddleware.checkUserLoggedIn, soci
 
 router.get('/societies/check_membership', authMiddleware.checkUserLoggedIn, societiesController.checkMembership);
 
+router.get('/societies/check_admin', authMiddleware.checkUserLoggedIn, societiesController.checkAdmin);
+
 router.put('/societies/update_info', authMiddleware.checkUserLoggedIn, societiesController.updateInformation);
 
 router.put('/societies/update_member_role', authMiddleware.checkUserLoggedIn, societiesController.updateMemberRole);
@@ -82,7 +84,7 @@ router.get('/events/get_events_by_society', eventsController.getEventsBySociety)
 
 
 // posts routes
-router.get('/posts/get_all_posts', postsController.getAllPosts);
+router.get('/posts/get_all_posts', authMiddleware.checkUserLoggedIn, postsController.getAllPosts);
 
 router.post('/posts/create_post', authMiddleware.checkUserLoggedIn, postsController.createPost);
 
@@ -91,6 +93,8 @@ router.delete('/posts/delete_post', authMiddleware.checkUserLoggedIn, postsContr
 router.get('/posts/get_posts_by_society', postsController.getPostsBySociety);
 
 router.post('/posts/like_post', authMiddleware.checkUserLoggedIn, postsController.likePost);
+
+router.post('/posts/unlike_post', authMiddleware.checkUserLoggedIn, postsController.unlikePost);
 
 
 // Support routes

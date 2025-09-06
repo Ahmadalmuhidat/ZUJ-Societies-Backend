@@ -23,25 +23,28 @@ exports.getAllPosts = async (req, res) => {
 
     const posts = await Post.find({ Society: { $in: societyIds } }).sort({ CreatedAt: -1 }).lean();
     const userIds = [...new Set(posts.map(p => p.User.toString()))];
-    const postIds = posts.map(p => p.ID);
+    const postIds = posts.map(p => p._id.toString()); // <-- fix here
 
     const [users, societies, likes] = await Promise.all([
       User.find({ ID: { $in: userIds } }).select("ID Name Photo").lean(),
       Society.find({ ID: { $in: societyIds } }).select("ID Name").lean(),
-      Like.find({ User: userId, Post: { $in: postIds } }).select("Post").lean()
+      Like.find({ User: userId, Post: { $in: postIds } }).lean() // <-- fix here
     ]);
 
     const postsWithDetails = posts.map(post => {
       const postUser = users.find(u => u.ID === post.User);
       const postSociety = societies.find(s => s.ID === post.Society);
-      const isLiked = likes.some(l => l.Post === post.ID);
+      const isLiked = likes.some(l => l.Post.toString() === post._id.toString());
+
+      // count likes dynamically
+      const likeCount = likes.filter(l => l.Post.toString() === post._id.toString()).length;
 
       return {
-        ID: post.ID,
+        ID: post._id.toString(),
         Content: post.Content || "",
-        Likes: post.LikesCount || 0,
+        Likes: likeCount,
         Image: post.Image || "",
-        Comments: post.CommentsCount || 0,
+        Comments: post.CommentsCount || 0, // optional: calculate dynamically if needed
         Society_Name: postSociety?.Name || null,
         User: post.User,
         User_Name: postUser?.Name || null,
@@ -56,6 +59,7 @@ exports.getAllPosts = async (req, res) => {
     return res.status(500).json({ error_message: "Failed to get Posts" });
   }
 };
+
 
 exports.createPost = async (req, res) => {
   try {
@@ -129,25 +133,15 @@ exports.getPostsBySociety = async (req, res) => {
     const societyId = req.query.society_id;
     if (!societyId) return res.status(400).json({ error_message: "Missing society_id" });
 
-    // Fetch posts in society
     const posts = await Post.find({ Society: societyId }).sort({ CreatedAt: -1 });
-
-    // Collect unique user IDs from posts
     const userIds = [...new Set(posts.map(p => p.User.toString()))];
-
-    // Fetch users
     const users = await User.find({ ID: { $in: userIds } }).select("ID Name Photo").lean();
-
-    // Post IDs
     const postIds = posts.map(p => p._id.toString());
-
-    // Fetch likes for these posts by current user & all users
     const likes = await Like.find({ Post: { $in: postIds } }).lean();
     const userLikes = new Set(
       likes.filter(like => like.User.toString() === userId).map(like => like.Post.toString())
     );
 
-    // Build response
     const postsWithDetails = posts.map(post => {
       const postUser = users.find(u => u._id.toString() === post.User.toString());
       const likeCount = likes.filter(like => like.Post.toString() === post._id.toString()).length;
@@ -170,6 +164,30 @@ exports.getPostsBySociety = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to get Posts for this society" });
+  }
+};
+
+exports.unlikePost = async (req, res) => {
+  try {
+    const userId = jsonWebToken.verify_token(req.body.token)['id'];
+    const postId = req.body.post_id;
+
+    const existingLike = await Like.findOne({ User: userId, Post: postId });
+    if (!existingLike) {
+      return res.status(400).json({ error_message: "User has not liked this post" });
+    }
+
+    await Like.deleteOne({ _id: existingLike._id });
+
+    await Post.updateOne(
+      { ID: postId },
+      { $inc: { LikesCount: -1 } }
+    );
+
+    res.status(200).json({ data: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error_message: "Failed to unlike post" });
   }
 };
 
