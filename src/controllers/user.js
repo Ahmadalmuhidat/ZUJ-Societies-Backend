@@ -47,7 +47,6 @@ exports.getUserProfileInformation = async (req, res) => {
   }
 };
 
-
 exports.updateProfile = async (req, res) => {
   try {
     const userId = jsonWebToken.verify_token(req.body.token)['id'];
@@ -74,5 +73,77 @@ exports.updateProfile = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to update User profile" });
+  }
+};
+
+// Public profile (no auth required)
+exports.getUserPublicProfile = async (req, res) => {
+  try {
+    const userId = req.query.user_id;
+    if (!userId) return res.status(400).json({ error_message: 'user_id is required' });
+
+    const user = await User.findOne(
+      { ID: userId },
+      'ID Name Email Bio Photo CreatedAt'
+    );
+
+    if (!user) return res.status(404).json({ error_message: 'User not found' });
+
+    const [postCount, eventCount, societyCount] = await Promise.all([
+      Post.countDocuments({ User: userId }),
+      Event.countDocuments({ User: userId }),
+      Society.countDocuments({ User: userId })
+    ]);
+
+    res.status(200).json({
+      data: {
+        ...user.toObject(),
+        Post_Count: postCount,
+        Event_Count: eventCount,
+        Society_Count: societyCount
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error_message: 'Failed to get public profile' });
+  }
+};
+
+// Public: list posts created by a user
+exports.getPostsByUserPublic = async (req, res) => {
+  try {
+    const userId = req.query.user_id;
+    const limit = Math.min(parseInt(req.query.limit || '20', 10), 50);
+    if (!userId) return res.status(400).json({ error_message: 'user_id is required' });
+
+    const posts = await Post.find({ User: userId }, 'ID Content Image CreatedAt Likes')
+      .sort({ CreatedAt: -1 })
+      .limit(limit)
+      .lean();
+
+    res.status(200).json({ data: posts });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error_message: 'Failed to get user posts' });
+  }
+};
+
+// Public: list societies owned by a user (fallback implementation)
+exports.getSocietiesByUserPublic = async (req, res) => {
+  try {
+    const userId = req.query.user_id;
+    const limit = Math.min(parseInt(req.query.limit || '20', 10), 50);
+    if (!userId) return res.status(400).json({ error_message: 'user_id is required' });
+
+    // If your schema tracks membership differently, adjust this query accordingly.
+    const societies = await Society.find({ User: userId }, 'ID Name Category Description Image CreatedAt')
+      .sort({ CreatedAt: -1 })
+      .limit(limit)
+      .lean();
+
+    res.status(200).json({ data: societies });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error_message: 'Failed to get user societies' });
   }
 };

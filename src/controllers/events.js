@@ -64,9 +64,9 @@ exports.createEvent = async (req, res) => {
     const userIds = members.map(m => m.User);
     const users = await User.find({ ID: { $in: userIds } }).select("Email").lean();
 
-    users.forEach(u => {
-      mailer.sendEmail(u.Email, "New Event", "Welcome to new event");
-    });
+    // users.forEach(u => {
+    //   mailer.sendEmail(u.Email, "New Event", "Welcome to new event");
+    // });
 
     res.status(201).json({ data: newEvent });
   } catch (err) {

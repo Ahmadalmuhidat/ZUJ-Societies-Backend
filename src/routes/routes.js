@@ -22,6 +22,8 @@ router.get('/users/get_user_profile_info', authMiddleware.checkUserLoggedIn, use
 
 router.put('/users/update_profile', authMiddleware.checkUserLoggedIn, userController.updateProfile);
 
+router.get('/users/get_user_public_profile', userController.getUserPublicProfile);
+
 // router.delete('/users/delete_user', auth_mdiddleware.checkUserLoggedIn, userController.deleteUser);
 
 
@@ -38,13 +40,15 @@ router.delete('/societies/delete_society', authMiddleware.checkUserLoggedIn, soc
 
 router.get('/societies/get_societies_by_user', authMiddleware.checkUserLoggedIn, societiesController.getSocietiesByUser);
 
-router.post('/societies/join_society_request', authMiddleware.checkUserLoggedIn, societiesController.joinSocietyRequest);
+router.post('/societies/join_request', authMiddleware.checkUserLoggedIn, societiesController.joinRequest);
 
-router.post('/societies/approve_request', authMiddleware.checkUserLoggedIn, societiesController.approveRequest);
+router.get('/societies/join_requests/check', authMiddleware.checkUserLoggedIn, societiesController.checkJoinRequest);
 
-router.post('/societies/reject_request', authMiddleware.checkUserLoggedIn, societiesController.rejectRequest);
+router.post('/societies/join_requests/approve', authMiddleware.checkUserLoggedIn, societiesController.approveJoinRequest);
 
-router.get('/societies/get_all_join_requests', authMiddleware.checkUserLoggedIn, societiesController.getAllJoinRequests);
+router.post('/societies/join_requests/reject', authMiddleware.checkUserLoggedIn, societiesController.rejectJoinRequest);
+
+router.get('/societies/join_requests/get_all', authMiddleware.checkUserLoggedIn, societiesController.getAllJoinRequests);
 
 router.get('/societies/get_all_members', societiesController.getAllMembers);
 
@@ -60,6 +64,7 @@ router.put('/societies/update_member_role', authMiddleware.checkUserLoggedIn, so
 
 router.put('/societies/leave_society', authMiddleware.checkUserLoggedIn, societiesController.leaveSociety);
 
+router.get('/societies/get_societies_by_user_public', userController.getSocietiesByUserPublic);
 
 // comment routes
 router.get('/comment/get_comments_by_post', authMiddleware.checkUserLoggedIn, commentsController.getCommentsByPost);
@@ -95,6 +100,8 @@ router.get('/posts/get_posts_by_society', postsController.getPostsBySociety);
 router.post('/posts/like_post', authMiddleware.checkUserLoggedIn, postsController.likePost);
 
 router.post('/posts/unlike_post', authMiddleware.checkUserLoggedIn, postsController.unlikePost);
+
+router.get('/posts/get_posts_by_user', userController.getPostsByUserPublic);
 
 
 // Support routes

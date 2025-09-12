@@ -215,7 +215,7 @@ exports.getSocietiesByUser = async (req, res) => {
 };
 
 // Join society request
-exports.joinSocietyRequest = async (req, res) => {
+exports.joinRequest = async (req, res) => {
   try {
     const userId = jsonWebToken.verify_token(req.body.token)['id'];
 
@@ -247,8 +247,30 @@ exports.joinSocietyRequest = async (req, res) => {
   }
 };
 
+// Join society request
+exports.checkJoinRequest = async (req, res) => {
+  try {
+    const userId = jsonWebToken.verify_token(req.query.token)['id'];
+
+    const existingRequest = await SocietyJoinRequest.findOne({
+      User: userId,
+      Society: req.query.society_id,
+      Status: { $in: ["pending", "approved", "rejected"] }
+    });
+
+    if (!existingRequest) {
+      return res.status(200).json({ data: "not_found" });
+    }
+
+    res.status(200).json({ data: existingRequest.Status });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error_message: "Failed to check join request status" });
+  }
+};
+
 // Approve join request
-exports.approveRequest = async (req, res) => {
+exports.approveJoinRequest = async (req, res) => {
   try {
     const request = await SocietyJoinRequest.findOne({ ID: req.body.request_id });
     if (!request) return res.status(404).json({ error_message: "Request not found" });
@@ -274,7 +296,7 @@ exports.approveRequest = async (req, res) => {
 };
 
 // Reject join request
-exports.rejectRequest = async (req, res) => {
+exports.rejectJoinRequest = async (req, res) => {
   try {
     const request = await SocietyJoinRequest.findOne({ ID: req.body.request_id });
     if (!request) return res.status(404).json({ error_message: "Request not found" });

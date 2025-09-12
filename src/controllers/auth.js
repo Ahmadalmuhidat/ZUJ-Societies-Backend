@@ -28,12 +28,20 @@ exports.login = async (req, res) => {
 
 exports.register = async (req, res) => {
   try {
+    const studentId = req.body.student_id;
+    const enrollmentYear = parseInt(studentId.toString().substring(0, 4), 10);
+    const currentYear = new Date().getFullYear();
+
+    if (currentYear - enrollmentYear > 7) {
+      return res.status(400).json({ error_message: "Student ID is older than 7 years" });
+    }
+
     const newUser = new User({
       ID: uuidv4(),
       Name: req.body.name,
       Email: req.body.email,
       Password: await passwords_helper.hash_password(req.body.password),
-      StudentID: req.body.student_id,
+      StudentID: studentId,
       Photo: req.body.photo,
       Bio: req.body.bio,
       PhoneNumber: req.body.phone_number || "0000",
@@ -48,3 +56,4 @@ exports.register = async (req, res) => {
     res.status(500).json({ error_message: "Failed to create User" });
   }
 };
+
