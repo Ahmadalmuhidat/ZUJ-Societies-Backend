@@ -1,7 +1,13 @@
 const User = require("../models/users");
 const passwords_helper = require("../helper/passwords");
 const jsonWebToken = require("../helper/json_web_token");
+const mailer = require("../services/mailer")
+const redis = require("../helper/redis")
 const { v4: uuidv4 } = require("uuid");
+
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code
+}
 
 exports.login = async (req, res) => {
   try {
@@ -31,6 +37,7 @@ exports.register = async (req, res) => {
     const studentId = req.body.student_id;
     const enrollmentYear = parseInt(studentId.toString().substring(0, 4), 10);
     const currentYear = new Date().getFullYear();
+    const otp = generateOTP();
 
     if (currentYear - enrollmentYear > 7) {
       return res.status(400).json({ error_message: "Student ID is older than 7 years" });
@@ -49,6 +56,10 @@ exports.register = async (req, res) => {
     });
 
     const savedUser = await newUser.save();
+
+    await redis.set(`emailOTP:${req.body.email}`, otp, "EX", 300);
+    mailer.sendEmail(req.body.email, "OTP", "Your OTP");
+
     res.status(201).json({ data: savedUser });
 
   } catch (err) {
@@ -57,3 +68,23 @@ exports.register = async (req, res) => {
   }
 };
 
+exports.verifyEmailOTP = async (req, res) => {
+  const { email, otp } = req.body;
+
+  try {
+    const savedOtp = await redis.get(`emailOTP:${email}`);
+    if (!savedOtp) {
+      return res.status(400).json({ error: "OTP expired or not found" });
+    }
+
+    if (savedOtp !== otp) {
+      return res.status(400).json({ error: "Invalid OTP" });
+    }
+
+    await redis.del(`emailOTP:${email}`);
+    res.json({ message: "Email verified successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Verification failed" });
+  }
+};

@@ -24,8 +24,21 @@ exports.createComment = async (req, res) => {
 
 exports.deleteComment = async (req, res) => {
   try {
-    const result = await Comment.deleteOne({ ID: req.query.comment_id });
-    res.status(204).json({ data: result });
+    const { comment_id, token } = req.query;
+    const userId = jsonWebToken.verify_token(token)['id'];
+
+    const comment = await Comment.findOne({ ID: comment_id });
+    if (!comment) {
+      return res.status(404).json({ error_message: "Comment not found" });
+    }
+
+    // Check if user is authorized to delete this comment
+    if (comment.User !== userId) {
+      return res.status(403).json({ error_message: "Not authorized to delete this comment" });
+    }
+
+    const result = await Comment.deleteOne({ ID: comment_id });
+    res.status(200).json({ message: "Comment deleted successfully", data: result });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to delete comment" });
@@ -47,6 +60,7 @@ exports.getCommentsByPost = async (req, res) => {
       return {
         ID: comment.ID,
         Content: comment.Content,
+        User: comment.User, // Include User field for authorization checks
         User_Name: user.Name || null,
         User_Photo: user.Photo || null
       };

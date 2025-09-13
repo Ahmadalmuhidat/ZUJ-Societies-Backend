@@ -135,13 +135,26 @@ exports.getSocietiesByUserPublic = async (req, res) => {
     const limit = Math.min(parseInt(req.query.limit || '20', 10), 50);
     if (!userId) return res.status(400).json({ error_message: 'user_id is required' });
 
+    const SocietyMember = require("../models/societyMembers");
+
     // If your schema tracks membership differently, adjust this query accordingly.
     const societies = await Society.find({ User: userId }, 'ID Name Category Description Image CreatedAt')
       .sort({ CreatedAt: -1 })
       .limit(limit)
       .lean();
 
-    res.status(200).json({ data: societies });
+    // Add member counts to each society
+    const societiesWithCounts = await Promise.all(
+      societies.map(async (society) => {
+        const memberCount = await SocietyMember.countDocuments({ Society: society.ID });
+        return {
+          ...society,
+          Member_Count: memberCount
+        };
+      })
+    );
+
+    res.status(200).json({ data: societiesWithCounts });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: 'Failed to get user societies' });

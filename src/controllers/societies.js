@@ -98,7 +98,7 @@ exports.getAllSocieties = async (req, res) => {
     // Only fetch societies that are NOT private
     const societies = await Society.find({ 'Privacy.visibility': { $ne: 'private' } });
 
-    // Add MembersCount for each society
+    // Add Member_Count for each society
     const societiesWithCount = await Promise.all(
       societies.map(async (society) => {
         const memberCount = await SocietyMember.countDocuments({ Society: society.ID });
@@ -108,7 +108,9 @@ exports.getAllSocieties = async (req, res) => {
           Description: society.Description,
           Category: society.Category,
           Image: society.Image,
-          MembersCount: memberCount
+          Member_Count: memberCount,
+          CreatedAt: society.CreatedAt,
+          User: society.User
         };
       })
     );
@@ -198,12 +200,23 @@ exports.getSocietiesByUser = async (req, res) => {
     const memberSocietyIds = memberships.map(m => m.Society);
     const memberSocieties = await Society.find({ ID: { $in: memberSocietyIds } });
 
+    // Add member counts to all societies
+    const societiesWithCounts = await Promise.all(
+      [...createdSocieties, ...memberSocieties].map(async (society) => {
+        const memberCount = await SocietyMember.countDocuments({ Society: society.ID });
+        return {
+          ...society.toObject(),
+          Member_Count: memberCount
+        };
+      })
+    );
+
     // Combine and include roles
     const combined = [
-      ...createdSocieties.map(s => ({ ...s.toObject(), Role: 'creator' })),
-      ...memberSocieties.map(s => {
+      ...societiesWithCounts.filter(s => createdSocieties.some(cs => cs.ID === s.ID)).map(s => ({ ...s, Role: 'creator' })),
+      ...societiesWithCounts.filter(s => memberSocieties.some(ms => ms.ID === s.ID)).map(s => {
         const membership = memberships.find(m => m.Society === s.ID);
-        return { ...s.toObject(), Role: membership?.Role || null };
+        return { ...s, Role: membership?.Role || null };
       })
     ];
 

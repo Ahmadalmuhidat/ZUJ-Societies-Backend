@@ -40,7 +40,7 @@ exports.getAllPosts = async (req, res) => {
       const likeCount = likes.filter(l => l.Post.toString() === post._id.toString()).length;
 
       return {
-        ID: post._id.toString(),
+        ID: post.ID, // Use the custom ID field instead of _id
         Content: post.Content || "",
         Likes: likeCount,
         Image: post.Image || "",
@@ -112,7 +112,12 @@ exports.deletePost = async (req, res) => {
     const userId = jsonWebToken.verify_token(token)['id'];
 
     const post = await Post.findOne({ ID: post_id });
-    if (!post || post.User !== userId) {
+    if (!post) {
+      return res.status(404).json({ error_message: "Post not found" });
+    }
+
+    // Check authorization - ensure both are strings for comparison
+    if (String(post.User) !== String(userId)) {
       return res.status(403).json({ error_message: "Not authorized to delete this post" });
     }
 
@@ -143,17 +148,17 @@ exports.getPostsBySociety = async (req, res) => {
     );
 
     const postsWithDetails = posts.map(post => {
-      const postUser = users.find(u => u._id.toString() === post.User.toString());
+      const postUser = users.find(u => u.ID === post.User);
       const likeCount = likes.filter(like => like.Post.toString() === post._id.toString()).length;
       const isLiked = userLikes.has(post._id.toString()) ? 1 : 0;
 
       return {
-        ID: post._id.toString(),
+        ID: post.ID, // Use the custom ID field instead of _id
         Content: post.Content,
         Likes: likeCount,
         Image: post.Image || "",
         Comments: post.CommentsCount || 0,
-        User: post.User.toString(),
+        User: post.User,
         User_Name: postUser?.Name || null,
         User_Image: postUser?.Photo || null,
         Is_Liked: isLiked
@@ -172,7 +177,13 @@ exports.unlikePost = async (req, res) => {
     const userId = jsonWebToken.verify_token(req.body.token)['id'];
     const postId = req.body.post_id;
 
-    const existingLike = await Like.findOne({ User: userId, Post: postId });
+    // Find the post by its custom ID to get the MongoDB _id
+    const post = await Post.findOne({ ID: postId });
+    if (!post) {
+      return res.status(404).json({ error_message: "Post not found" });
+    }
+
+    const existingLike = await Like.findOne({ User: userId, Post: post._id.toString() });
     if (!existingLike) {
       return res.status(400).json({ error_message: "User has not liked this post" });
     }
@@ -196,10 +207,16 @@ exports.likePost = async (req, res) => {
     const userId = jsonWebToken.verify_token(req.body.token)['id'];
     const postId = req.body.post_id;
 
-    const existingLike = await Like.findOne({ User: userId, Post: postId });
+    // Find the post by its custom ID to get the MongoDB _id
+    const post = await Post.findOne({ ID: postId });
+    if (!post) {
+      return res.status(404).json({ error_message: "Post not found" });
+    }
+
+    const existingLike = await Like.findOne({ User: userId, Post: post._id.toString() });
     if (existingLike) return res.status(400).json({ error_message: "User already liked this post" });
 
-    const newLike = new Like({ ID: uuidv4(), User: userId, Post: postId });
+    const newLike = new Like({ ID: uuidv4(), User: userId, Post: post._id.toString() });
     await newLike.save();
 
     await Post.updateOne({ ID: postId }, { $inc: { LikesCount: 1 } });

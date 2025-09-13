@@ -8,6 +8,7 @@ const societiesController = require('../controllers/societies');
 const userController = require('../controllers/user');
 const authMiddleware = require('../middlewares/auth');
 const supportController = require('../controllers/support');
+const analyticsController = require('../controllers/analytics');
 
 // auth routes
 router.get('/auth/login', authController.login);
@@ -87,6 +88,15 @@ router.delete('/events/delete_event', authMiddleware.checkUserLoggedIn, eventsCo
 
 router.get('/events/get_events_by_society', eventsController.getEventsBySociety);
 
+// Event interaction routes
+router.get('/events/get_event_stats', eventsController.getEventStats);
+router.post('/events/toggle_attendance', authMiddleware.checkUserLoggedIn, eventsController.toggleEventAttendance);
+router.post('/events/toggle_bookmark', authMiddleware.checkUserLoggedIn, eventsController.toggleEventBookmark);
+router.post('/events/record_share', authMiddleware.checkUserLoggedIn, eventsController.recordEventShare);
+router.get('/events/get_user_status', authMiddleware.checkUserLoggedIn, eventsController.getUserEventStatus);
+router.get('/events/get_related_events', eventsController.getRelatedEvents);
+router.get('/events/get_events_attended_by_user', eventsController.getEventsAttendedByUser);
+
 
 // posts routes
 router.get('/posts/get_all_posts', authMiddleware.checkUserLoggedIn, postsController.getAllPosts);
@@ -106,5 +116,11 @@ router.get('/posts/get_posts_by_user', userController.getPostsByUserPublic);
 
 // Support routes
 router.post('/support/create_ticket', authMiddleware.checkUserLoggedIn, supportController.CreateTicket);
+
+// Analytics routes
+router.get('/analytics/platform', analyticsController.getPlatformAnalytics);
+router.get('/analytics/trending-posts', analyticsController.getTrendingPosts);
+router.get('/analytics/activity-feed', analyticsController.getActivityFeed);
+router.get('/analytics/recommendations', analyticsController.getUserRecommendations);
 
 module.exports = router;
