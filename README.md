@@ -1,5 +1,3 @@
-# ZUJ Societies Backend
-
 A comprehensive Node.js backend API for managing university societies, events, posts, and user interactions at Zarqa University (ZUJ).
 
 ## 🚀 Features
