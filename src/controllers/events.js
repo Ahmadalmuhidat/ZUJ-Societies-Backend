@@ -8,6 +8,7 @@ const { v4: uuidv4 } = require("uuid");
 const jsonWebToken = require("../helper/json_web_token");
 const jwt = require("jsonwebtoken");
 const mailer = require("../services/mailer");
+const { sendNotificationToUsers } = require('./notifications');
 
 exports.getAllEvents = async (req, res) => {
   try {
@@ -63,14 +64,35 @@ exports.createEvent = async (req, res) => {
 
     await newEvent.save();
 
-    // Notify society members by email
-    const members = await SocietyMember.find({ Society: req.body.society_id }).select("User").lean();
-    const userIds = members.map(m => m.User);
-    const users = await User.find({ ID: { $in: userIds } }).select("Email").lean();
+    // Send notifications to society members
+    try {
+      const society = await Society.findOne({ ID: req.body.society_id });
+      const eventCreator = await User.findOne({ ID: userId }).select('Name Photo');
+      
+      // Get all society members
+      const members = await SocietyMember.find({ Society: req.body.society_id }).select("User").lean();
+      const memberUserIds = members.map(m => m.User);
+      
+      if (memberUserIds.length > 0) {
+        const notification = {
+          type: 'new_event',
+          title: 'New Event Created',
+          message: `${eventCreator?.Name || 'Someone'} created a new event: "${req.body.title}" in ${society?.Name || 'your society'}`,
+          data: {
+            eventId: newEventId,
+            societyId: req.body.society_id,
+            userId: userId,
+            eventTitle: req.body.title,
+            societyName: society?.Name
+          },
+          time: new Date().toISOString()
+        };
 
-    // users.forEach(u => {
-    //   mailer.sendEmail(u.Email, "New Event", "Welcome to new event");
-    // });
+        await sendNotificationToUsers(memberUserIds, notification);
+      }
+    } catch (notificationError) {
+      console.error('Failed to send event notification:', notificationError);
+    }
 
     res.status(201).json({ data: newEvent });
   } catch (err) {
@@ -99,7 +121,7 @@ exports.deleteEvent = async (req, res) => {
     const userId = user.user_id;
 
     // Check if user is the creator of the event
-    const isCreator = event.User && event.User.toString() === userId;
+    const isCreator = event.User && event.User === userId;
 
     // Check if user is admin or moderator of the society
     let isAdminOrModerator = false;

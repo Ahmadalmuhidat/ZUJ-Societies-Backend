@@ -6,6 +6,7 @@ const Comment = require('../models/comments');
 const SocietyMember = require("../models/societyMembers");
 const { v4: uuidv4 } = require("uuid");
 const jsonWebToken = require("../helper/json_web_token");
+const { sendNotificationToUsers } = require('./notifications');
 
 exports.getAllPosts = async (req, res) => {
   try {
@@ -28,7 +29,7 @@ exports.getAllPosts = async (req, res) => {
     const [users, societies, likes] = await Promise.all([
       User.find({ ID: { $in: userIds } }).select("ID Name Photo").lean(),
       Society.find({ ID: { $in: societyIds } }).select("ID Name").lean(),
-      Like.find({ User: userId, Post: { $in: postIds } }).lean() // <-- fix here
+      Like.find({ User: userId, Post: { $in: postIds } }).lean() // User's likes for Is_Liked
     ]);
 
     const postsWithDetails = posts.map(post => {
@@ -36,8 +37,8 @@ exports.getAllPosts = async (req, res) => {
       const postSociety = societies.find(s => s.ID === post.Society);
       const isLiked = likes.some(l => l.Post.toString() === post._id.toString());
 
-      // count likes dynamically
-      const likeCount = likes.filter(l => l.Post.toString() === post._id.toString()).length;
+      // Use stored likes count for consistency
+      const likeCount = post.LikesCount || 0;
 
       return {
         ID: post.ID, // Use the custom ID field instead of _id
@@ -99,6 +100,31 @@ exports.createPost = async (req, res) => {
 
     await post.save();
 
+    // Send notification to society members
+    try {
+      const societyMembers = await SocietyMember.find({ Society: society_id }).select('User');
+      const memberUserIds = societyMembers.map(member => member.User.toString());
+      
+      // Get user info for notification
+      const user = await User.findById(userId).select('Name Photo');
+      
+      const notification = {
+        type: 'post',
+        title: 'New Post',
+        message: `${user?.Name || 'Someone'} posted in ${society.Name}`,
+        data: {
+          postId: post.ID,
+          societyId: society_id,
+          userId: userId
+        },
+        time: new Date().toISOString()
+      };
+
+      sendNotificationToUsers(memberUserIds, notification);
+    } catch (notificationError) {
+      console.error('Failed to send post notification:', notificationError);
+    }
+
     res.status(201).json({ message: 'Post created successfully', post });
   } catch (error) {
     console.error(error);
@@ -149,7 +175,7 @@ exports.getPostsBySociety = async (req, res) => {
 
     const postsWithDetails = posts.map(post => {
       const postUser = users.find(u => u.ID === post.User);
-      const likeCount = likes.filter(like => like.Post.toString() === post._id.toString()).length;
+      const likeCount = post.LikesCount || 0;
       const isLiked = userLikes.has(post._id.toString()) ? 1 : 0;
 
       return {
@@ -220,6 +246,30 @@ exports.likePost = async (req, res) => {
     await newLike.save();
 
     await Post.updateOne({ ID: postId }, { $inc: { LikesCount: 1 } });
+
+    // Send notification to post author
+    try {
+      if (post.User.toString() !== userId) { // Don't notify if user likes their own post
+        const user = await User.findOne({ ID: userId }).select('Name Photo');
+        const postAuthor = await User.findOne({ ID: post.User }).select('Name');
+        
+        const notification = {
+          type: 'like',
+          title: 'New Like',
+          message: `${user?.Name || 'Someone'} liked your post`,
+          data: {
+            likeId: newLike.ID,
+            postId: postId,
+            userId: userId
+          },
+          time: new Date().toISOString()
+        };
+
+        await sendNotificationToUsers([post.User.toString()], notification);
+      }
+    } catch (notificationError) {
+      console.error('Failed to send like notification:', notificationError);
+    }
 
     res.status(201).json({ data: true });
   } catch (err) {

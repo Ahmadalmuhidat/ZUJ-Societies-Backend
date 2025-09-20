@@ -1,7 +1,9 @@
 const Comment = require("../models/comments");
 const User = require("../models/users");
+const Post = require("../models/posts");
 const { v4: uuidv4 } = require("uuid");
 const jsonWebToken = require("../helper/json_web_token");
+const { sendNotificationToUsers } = require('./notifications');
 
 exports.createComment = async (req, res) => {
   try {
@@ -15,6 +17,31 @@ exports.createComment = async (req, res) => {
     });
 
     await newComment.save();
+
+    // Send notification to post author
+    try {
+      const post = await Post.findById(req.body.post_id);
+      if (post && post.User.toString() !== userId) { // Don't notify if user comments on their own post
+        const user = await User.findOne({ ID: userId }).select('Name Photo');
+        
+        const notification = {
+          type: 'comment',
+          title: 'New Comment',
+          message: `${user?.Name || 'Someone'} commented on your post`,
+          data: {
+            commentId: newComment.ID,
+            postId: post._id.toString(),
+            userId: userId
+          },
+          time: new Date().toISOString()
+        };
+
+        await sendNotificationToUsers([post.User.toString()], notification);
+      }
+    } catch (notificationError) {
+      console.error('Failed to send comment notification:', notificationError);
+    }
+
     res.status(201).json({ data: newComment });
   } catch (err) {
     console.error(err);

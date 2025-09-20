@@ -7,4 +7,7 @@ const likeSchema = new mongoose.Schema({
   CreatedAt: { type: Date, default: Date.now }
 });
 
+// Create compound unique index to prevent duplicate likes from same user on same post
+likeSchema.index({ User: 1, Post: 1 }, { unique: true });
+
 module.exports = mongoose.model('Like', likeSchema);

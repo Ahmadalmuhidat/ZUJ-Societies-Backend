@@ -43,6 +43,22 @@ exports.register = async (req, res) => {
       return res.status(400).json({ error_message: "Student ID is older than 7 years" });
     }
 
+    // Check if email already exists
+    const existingUserByEmail = await User.findOne({ Email: req.body.email });
+    if (existingUserByEmail) {
+      return res.status(409).json({ 
+        error_message: "Email already exists. Please use a different email address or try logging in." 
+      });
+    }
+
+    // Check if student ID already exists
+    const existingUserByStudentID = await User.findOne({ StudentID: studentId });
+    if (existingUserByStudentID) {
+      return res.status(409).json({ 
+        error_message: "Student ID already exists. Please use a different student ID or contact support if this is an error." 
+      });
+    }
+
     const newUser = new User({
       ID: uuidv4(),
       Name: req.body.name,
@@ -57,13 +73,40 @@ exports.register = async (req, res) => {
 
     const savedUser = await newUser.save();
 
-    await redis.set(`emailOTP:${req.body.email}`, otp, "EX", 300);
-    mailer.sendEmail(req.body.email, "OTP", "Your OTP");
+    // await redis.set(`emailOTP:${req.body.email}`, otp, "EX", 300);
+    // mailer.sendEmail(req.body.email, "OTP", "Your OTP");
 
     res.status(201).json({ data: savedUser });
 
   } catch (err) {
     console.error(err);
+    
+    // Handle duplicate key errors
+    if (err.code === 11000 && err.keyPattern) {
+      if (err.keyPattern.Email) {
+        return res.status(409).json({ 
+          error_message: "Email already exists. Please use a different email address or try logging in." 
+        });
+      } else if (err.keyPattern.StudentID) {
+        return res.status(409).json({ 
+          error_message: "Student ID already exists. Please use a different student ID or contact support if this is an error." 
+        });
+      } else if (err.keyPattern.ID) {
+        return res.status(500).json({ 
+          error_message: "A system error occurred. Please try again." 
+        });
+      }
+    }
+    
+    // Handle other validation errors
+    if (err.name === 'ValidationError') {
+      const errors = Object.values(err.errors).map(e => e.message);
+      return res.status(400).json({ 
+        error_message: "Validation failed", 
+        details: errors 
+      });
+    }
+    
     res.status(500).json({ error_message: "Failed to create User" });
   }
 };

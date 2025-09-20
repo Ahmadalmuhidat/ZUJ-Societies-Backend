@@ -5,6 +5,7 @@ const SocietyInvite = require('../models/SocietyInvite');
 const User = require("../models/users");
 const { v4: uuidv4 } = require("uuid");
 const jsonWebToken = require("../helper/json_web_token");
+const { sendNotificationToUsers } = require('./notifications');
 
 // Get Society info
 exports.getSocietyInformation = async (req, res) => {
@@ -252,6 +253,40 @@ exports.joinRequest = async (req, res) => {
     });
 
     const saved = await newRequest.save();
+
+    // Send notification to society admins
+    try {
+      const society = await Society.findOne({ ID: req.body.society_id });
+      const user = await User.findOne({ ID: userId }).select('Name Photo');
+      
+      // Get all admins of the society
+      const admins = await SocietyMember.find({ 
+        Society: req.body.society_id, 
+        Role: { $in: ['admin', 'creator'] } 
+      }).select('User');
+      
+      const adminUserIds = admins.map(admin => admin.User);
+      
+      if (adminUserIds.length > 0) {
+        const notification = {
+          type: 'join_request',
+          title: 'New Join Request',
+          message: `${user?.Name || 'Someone'} wants to join ${society?.Name || 'your society'}`,
+          data: {
+            requestId: saved.ID,
+            societyId: req.body.society_id,
+            userId: userId,
+            societyName: society?.Name
+          },
+          time: new Date().toISOString()
+        };
+
+        await sendNotificationToUsers(adminUserIds, notification);
+      }
+    } catch (notificationError) {
+      console.error('Failed to send join request notification:', notificationError);
+    }
+
     res.status(201).json({ data: saved });
 
   } catch (err) {
@@ -299,7 +334,27 @@ exports.approveJoinRequest = async (req, res) => {
     });
     await newMember.save();
 
-    // TODO: Send acceptance email here via mailer service
+    // Send notification to the user whose request was approved
+    try {
+      const society = await Society.findOne({ ID: request.Society });
+      const user = await User.findOne({ ID: request.User }).select('Name');
+      
+      const notification = {
+        type: 'join_approved',
+        title: 'Join Request Approved',
+        message: `Your request to join ${society?.Name || 'the society'} has been approved!`,
+        data: {
+          requestId: request.ID,
+          societyId: request.Society,
+          societyName: society?.Name
+        },
+        time: new Date().toISOString()
+      };
+
+      await sendNotificationToUsers([request.User.toString()], notification);
+    } catch (notificationError) {
+      console.error('Failed to send approval notification:', notificationError);
+    }
 
     res.status(204).json({ data: newMember });
   } catch (err) {
@@ -316,6 +371,27 @@ exports.rejectJoinRequest = async (req, res) => {
 
     request.Status = 'rejected';
     await request.save();
+
+    // Send notification to the user whose request was rejected
+    try {
+      const society = await Society.findOne({ ID: request.Society });
+      
+      const notification = {
+        type: 'join_rejected',
+        title: 'Join Request Rejected',
+        message: `Your request to join ${society?.Name || 'the society'} has been rejected.`,
+        data: {
+          requestId: request.ID,
+          societyId: request.Society,
+          societyName: society?.Name
+        },
+        time: new Date().toISOString()
+      };
+
+      await sendNotificationToUsers([request.User.toString()], notification);
+    } catch (notificationError) {
+      console.error('Failed to send rejection notification:', notificationError);
+    }
 
     res.status(204).json({ data: request });
   } catch (err) {

@@ -3,6 +3,9 @@ const Post = require('../models/posts');
 const Event = require('../models/events');
 const Society = require('../models/societies');
 const Comment = require('../models/comments');
+const Like = require('../models/likes');
+const { v4: uuidv4 } = require("uuid");
+const jsonWebToken = require("../helper/json_web_token");
 
 // Get platform analytics
 exports.getPlatformAnalytics = async (req, res) => {
@@ -71,6 +74,13 @@ exports.getTrendingPosts = async (req, res) => {
       return res.status(401).json({ error_message: "Token required" });
     }
 
+    let userId;
+    try {
+      userId = jsonWebToken.verify_token(token)['id'];
+    } catch {
+      return res.status(401).json({ error_message: "Invalid token" });
+    }
+
     const limit = parseInt(req.query.limit) || 10;
     const days = parseInt(req.query.days) || 7;
 
@@ -84,21 +94,45 @@ exports.getTrendingPosts = async (req, res) => {
     .sort({ Likes: -1, CommentsCount: -1 })
     .limit(limit);
 
-    // Transform posts to include engagement score
-    const trendingPosts = posts.map(post => ({
-      ID: post.ID,
-      Content: post.Content,
-      Likes: post.Likes || 0,
-      CommentsCount: post.CommentsCount || 0,
-      Image: post.Image,
-      CreatedAt: post.CreatedAt,
-      engagement: (post.Likes || 0) + (post.CommentsCount || 0),
-      User_Name: 'User', // Will be populated by frontend
-      User_Image: 'https://cdn-icons-png.flaticon.com/512/4537/4537019.png',
-      Society_Name: 'Society', // Will be populated by frontend
-      User: post.User,
-      Society: post.Society
-    }));
+    // Get all likes for these posts
+    const postIds = posts.map(p => p._id.toString());
+    const likes = await Like.find({ Post: { $in: postIds } }).lean();
+    
+    // Create a set of posts liked by the current user
+    const userLikes = new Set(
+      likes.filter(like => like.User.toString() === userId).map(like => like.Post.toString())
+    );
+
+    // Get user and society details
+    const userIds = [...new Set(posts.map(p => p.User.toString()))];
+    const societyIds = [...new Set(posts.map(p => p.Society.toString()))];
+    const users = await User.find({ ID: { $in: userIds } }).select("ID Name Photo").lean();
+    const societies = await Society.find({ ID: { $in: societyIds } }).select("ID Name").lean();
+
+    // Transform posts to include engagement score and like status
+    const trendingPosts = posts.map(post => {
+      const postUser = users.find(u => u.ID === post.User);
+      const postSociety = societies.find(s => s.ID === post.Society);
+      const likeCount = post.LikesCount || 0;
+      const isLiked = userLikes.has(post._id.toString());
+
+      return {
+        ID: post.ID,
+        Content: post.Content,
+        Likes: likeCount,
+        CommentsCount: post.CommentsCount || 0,
+        Comments: post.Comments || 0,
+        Image: post.Image,
+        CreatedAt: post.CreatedAt,
+        Is_Liked: isLiked,
+        engagement: likeCount + (post.CommentsCount || 0),
+        User_Name: postUser?.Name || 'Unknown User',
+        User_Image: postUser?.Photo || 'https://cdn-icons-png.flaticon.com/512/4537/4537019.png',
+        Society_Name: postSociety?.Name || 'Unknown Society',
+        User: post.User,
+        Society: post.Society
+      };
+    });
 
     res.status(200).json({ data: trendingPosts });
   } catch (err) {

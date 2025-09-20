@@ -9,6 +9,7 @@ const userController = require('../controllers/user');
 const authMiddleware = require('../middlewares/auth');
 const supportController = require('../controllers/support');
 const analyticsController = require('../controllers/analytics');
+const notificationsController = require('../controllers/notifications');
 
 // auth routes
 router.get('/auth/login', authController.login);
@@ -122,5 +123,11 @@ router.get('/analytics/platform', analyticsController.getPlatformAnalytics);
 router.get('/analytics/trending-posts', analyticsController.getTrendingPosts);
 router.get('/analytics/activity-feed', analyticsController.getActivityFeed);
 router.get('/analytics/recommendations', analyticsController.getUserRecommendations);
+
+// Notification routes
+router.get('/notifications', authMiddleware.checkUserLoggedIn, notificationsController.getNotifications);
+router.get('/notifications/sse', notificationsController.getNotificationsSSE);
+router.post('/notifications/mark-read', authMiddleware.checkUserLoggedIn, notificationsController.markNotificationAsRead);
+router.post('/notifications/mark-all-read', authMiddleware.checkUserLoggedIn, notificationsController.markAllNotificationsAsRead);
 
 module.exports = router;
