@@ -1,6 +1,6 @@
 A comprehensive Node.js backend API for managing university societies, events, posts, and user interactions at Zarqa University (ZUJ).
 
-## 🚀 Features
+## Features
 
 - **User Management**: Registration, authentication, profile management
 - **Society Management**: Create, join, and manage university societies
@@ -10,7 +10,7 @@ A comprehensive Node.js backend API for managing university societies, events, p
 - **Support System**: Ticket-based support system
 - **Real-time Features**: Redis integration for caching and real-time data
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Runtime**: Node.js 18
 - **Framework**: Express.js
@@ -21,14 +21,14 @@ A comprehensive Node.js backend API for managing university societies, events, p
 - **Security**: bcrypt for password hashing
 - **Containerization**: Docker
 
-## 📋 Prerequisites
+## Prerequisites
 
 - Node.js 18 or higher
 - MongoDB
 - Redis
 - Docker (optional)
 
-## 🔧 Installation
+## Installation
 
 ### Local Development
 
@@ -77,7 +77,7 @@ A comprehensive Node.js backend API for managing university societies, events, p
      zuj-societies-backend
    ```
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 src/
@@ -112,7 +112,7 @@ src/
 └── server.js               # Main server file
 ```
 
-## 🔐 Security Features
+## Security Features
 
 - JWT-based authentication
 - Password hashing with bcrypt
@@ -121,7 +121,7 @@ src/
 - Error handling middleware
 - Non-root Docker user
 
-## 🚀 Deployment
+## Deployment
 
 ### Jenkins CI/CD
 
@@ -150,7 +150,7 @@ The project includes a Jenkinsfile for automated deployment:
 | `EMAIL_PASS` | Email service password | Yes |
 | `REDIS_URL` | Redis connection URL | No |
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -158,11 +158,11 @@ The project includes a Jenkinsfile for automated deployment:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📝 License
+## License
 
 This project is licensed under the ISC License - see the [LICENSE](LICENSE) file for details.
 
-## 👨‍💻 Author
+## Author
 
 **Ahmad ALmuhidat**
 - Email: ahmad.almuhidat@gmail.com
