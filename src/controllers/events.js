@@ -104,10 +104,18 @@ exports.createEvent = async (req, res) => {
 exports.deleteEvent = async (req, res) => {
   try {
     const { event_id } = req.query;
-    const token = req.query.token;
+    // Try to get token from query params first, then from Authorization header
+    let token = req.query.token;
+    if (!token && req.headers.authorization) {
+      token = req.headers.authorization.replace('Bearer ', '');
+    }
 
     if (!event_id) {
       return res.status(400).json({ error_message: "Event ID is required" });
+    }
+
+    if (!token) {
+      return res.status(401).json({ error_message: "Token is required" });
     }
 
     // Get the event first to check permissions
@@ -118,7 +126,9 @@ exports.deleteEvent = async (req, res) => {
 
     // Get user info from token
     const user = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = user.user_id;
+    
+    // Extract user ID from JWT payload
+    const userId = user.id;
 
     // Check if user is the creator of the event
     const isCreator = event.User && event.User === userId;
@@ -127,22 +137,12 @@ exports.deleteEvent = async (req, res) => {
     let isAdminOrModerator = false;
     if (event.Society) {
       try {
-        const society = await Society.findOne({ ID: event.Society });
-        if (society) {
-          // Check if user is admin
-          const adminCheck = await AxiosClient.get('/societies/check_admin', {
-            params: { token, society_id: event.Society }
-          });
-          isAdminOrModerator = adminCheck.data.data || false;
-
-          // If not admin, check if user is moderator
-          if (!isAdminOrModerator) {
-            const moderatorCheck = await AxiosClient.get('/societies/check_moderator', {
-              params: { token, society_id: event.Society }
-            });
-            isAdminOrModerator = moderatorCheck.data.data || false;
-          }
-        }
+        // Check if user is admin or moderator directly from database
+        const member = await SocietyMember.findOne({ 
+          Society: event.Society, 
+          User: userId 
+        });
+        isAdminOrModerator = member && (member.Role === 'admin' || member.Role === 'moderator');
       } catch (err) {
         console.error('Error checking admin/moderator status:', err);
       }
@@ -237,17 +237,23 @@ exports.toggleEventAttendance = async (req, res) => {
       return res.status(404).json({ error_message: "Event not found" });
     }
 
-    // Upsert attendance record
-    const attendance = await EventAttendance.findOneAndUpdate(
-      { Event: eventId, User: userId },
-      { 
-        Event: eventId, 
-        User: userId, 
-        Status: status,
-        UpdatedAt: new Date()
-      },
-      { upsert: true, new: true }
-    );
+    // Find existing attendance record
+    let attendance = await EventAttendance.findOne({ Event: eventId, User: userId });
+    
+    if (attendance) {
+      // Update existing record
+      attendance.Status = status;
+      attendance.UpdatedAt = new Date();
+      await attendance.save();
+    } else {
+      // Create new record
+      attendance = new EventAttendance({
+        Event: eventId,
+        User: userId,
+        Status: status
+      });
+      await attendance.save();
+    }
 
     res.status(200).json({ 
       data: { 

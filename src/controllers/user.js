@@ -4,6 +4,32 @@ const Event = require("../models/events");
 const Society = require("../models/societies");
 const jsonWebToken = require("../helper/json_web_token");
 
+// Search users
+exports.searchUsers = async (req, res) => {
+  try {
+    const { query } = req.query;
+    
+    if (!query || query.length < 2) {
+      return res.status(400).json({ error_message: "Query must be at least 2 characters long" });
+    }
+
+    const users = await User.find(
+      {
+        $or: [
+          { Name: { $regex: query, $options: 'i' } },
+          { Email: { $regex: query, $options: 'i' } }
+        ]
+      },
+      'ID Name Email Photo'
+    ).limit(10);
+
+    res.status(200).json({ data: users });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error_message: "Failed to search users" });
+  }
+};
+
 exports.getUserInformation = async (req, res) => {
   try {
     const userId = jsonWebToken.verify_token(req.query.token)['id'];

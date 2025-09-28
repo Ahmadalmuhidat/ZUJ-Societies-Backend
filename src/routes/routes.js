@@ -26,6 +26,8 @@ router.put('/users/update_profile', authMiddleware.checkUserLoggedIn, userContro
 
 router.get('/users/get_user_public_profile', userController.getUserPublicProfile);
 
+router.get('/users/search_users', userController.searchUsers);
+
 // router.delete('/users/delete_user', auth_mdiddleware.checkUserLoggedIn, userController.deleteUser);
 
 
@@ -65,6 +67,12 @@ router.put('/societies/update_info', authMiddleware.checkUserLoggedIn, societies
 router.put('/societies/update_member_role', authMiddleware.checkUserLoggedIn, societiesController.updateMemberRole);
 
 router.put('/societies/leave_society', authMiddleware.checkUserLoggedIn, societiesController.leaveSociety);
+
+router.post('/societies/invite_member', authMiddleware.checkUserLoggedIn, societiesController.inviteMemberToSociety);
+
+router.get('/societies/get_sent_invitations', authMiddleware.checkUserLoggedIn, societiesController.getSentInvitations);
+
+router.delete('/societies/cancel_invitation', authMiddleware.checkUserLoggedIn, societiesController.cancelInvitation);
 
 router.get('/societies/get_societies_by_user_public', userController.getSocietiesByUserPublic);
 

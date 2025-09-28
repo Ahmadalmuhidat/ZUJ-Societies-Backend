@@ -8,12 +8,16 @@ function checkUserLoggedIn(req, res, next) {
 
   if (!token) return res.status(401).json({ error_message: "Token not provided" });
 
-  const valid = jsonWebToken.verify_token(token);
-
-  if (valid) {
-    next();
-  } else {
-    res.status(401).json({ error_message: "Failed to verify the token" });
+  try {
+    const userData = jsonWebToken.verify_token(token);
+    if (userData) {
+      req.user = userData; // Attach user data to request
+      next();
+    } else {
+      res.status(401).json({ error_message: "Failed to verify the token" });
+    }
+  } catch (error) {
+    res.status(401).json({ error_message: "Invalid or expired token" });
   }
 }
 

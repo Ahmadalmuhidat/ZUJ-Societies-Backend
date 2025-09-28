@@ -93,6 +93,64 @@ exports.inviteMemberToSociety = async (req, res) => {
   }
 };
 
+// Get sent invitations for a society
+exports.getSentInvitations = async (req, res) => {
+  try {
+    const { society_id } = req.query;
+    const userId = req.user.id;
+
+    // Check if user has permission to view invitations
+    const member = await SocietyMember.findOne({ Society: society_id, User: userId });
+    if (!member || !['admin', 'moderator'].includes(member.Role)) {
+      return res.status(403).json({ error_message: 'You do not have permission to view invitations' });
+    }
+
+    const invitations = await SocietyInvite.find({ Society: society_id })
+      .populate('Invitee', 'ID Name Email Photo')
+      .sort({ CreatedAt: -1 });
+
+    // Format the response
+    const formattedInvitations = invitations.map(invite => ({
+      ID: invite.ID,
+      InviteeName: invite.Invitee?.Name || 'Unknown User',
+      InviteeEmail: invite.Invitee?.Email || 'unknown@email.com',
+      InviteePhoto: invite.Invitee?.Photo,
+      Status: invite.Status,
+      CreatedAt: invite.CreatedAt
+    }));
+
+    res.status(200).json({ data: formattedInvitations });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error_message: 'Failed to fetch invitations' });
+  }
+};
+
+// Cancel an invitation
+exports.cancelInvitation = async (req, res) => {
+  try {
+    const { invitation_id } = req.query;
+    const userId = req.user.id;
+
+    const invitation = await SocietyInvite.findOne({ ID: invitation_id });
+    if (!invitation) {
+      return res.status(404).json({ error_message: 'Invitation not found' });
+    }
+
+    // Check if user has permission to cancel this invitation
+    const member = await SocietyMember.findOne({ Society: invitation.Society, User: userId });
+    if (!member || !['admin', 'moderator'].includes(member.Role)) {
+      return res.status(403).json({ error_message: 'You do not have permission to cancel this invitation' });
+    }
+
+    await SocietyInvite.deleteOne({ ID: invitation_id });
+    res.status(200).json({ message: 'Invitation cancelled successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error_message: 'Failed to cancel invitation' });
+  }
+};
+
 // Get all societies
 exports.getAllSocieties = async (req, res) => {
   try {
@@ -180,8 +238,32 @@ exports.createSociety = async (req, res) => {
 // Delete society
 exports.deleteSociety = async (req, res) => {
   try {
-    const result = await Society.deleteOne({ ID: req.query.society_id });
-    res.status(204).json({ data: result });
+    const { society_id } = req.query;
+    
+    if (!society_id) {
+      return res.status(400).json({ error_message: "Society ID is required" });
+    }
+
+    // Get the society first to check permissions
+    const society = await Society.findOne({ ID: society_id });
+    if (!society) {
+      return res.status(404).json({ error_message: "Society not found" });
+    }
+
+    // Check if user is the creator of the society
+    const userId = req.user.id; // This comes from the auth middleware
+    if (society.User !== userId) {
+      return res.status(403).json({ error_message: "You don't have permission to delete this society" });
+    }
+
+    // Delete the society
+    const result = await Society.deleteOne({ ID: society_id });
+    
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error_message: "Society not found" });
+    }
+
+    res.status(200).json({ message: "Society deleted successfully" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error_message: "Failed to delete society" });
@@ -532,11 +614,36 @@ exports.updateMemberRole = async (req, res) => {
 // Leave society
 exports.leaveSociety = async (req, res) => {
   try {
-    const userId = jsonWebToken.verify_token(req.body.token)['id'];
-    const result = await SocietyMember.deleteOne({ User: userId, Society: req.body.society_id });
-    res.status(204).json({ data: result });
+    const userId = req.user.id; // Get user ID from auth middleware
+    const societyId = req.body.society_id;
+    
+    if (!societyId) {
+      return res.status(400).json({ error_message: "Society ID is required" });
+    }
+
+    // Check if user is a member of the society
+    const membership = await SocietyMember.findOne({ User: userId, Society: societyId });
+    
+    if (!membership) {
+      return res.status(404).json({ error_message: "You are not a member of this society" });
+    }
+
+    // Check if user is the society creator
+    const society = await Society.findOne({ ID: societyId });
+    
+    if (society && society.User === userId) {
+      return res.status(400).json({ error_message: "Society creators cannot leave. Please transfer ownership or delete the society instead." });
+    }
+
+    const result = await SocietyMember.deleteOne({ User: userId, Society: societyId });
+    
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error_message: "Membership not found" });
+    }
+
+    res.status(200).json({ message: "Successfully left the society" });
   } catch (err) {
-    console.error(err);
+    console.error('Error in leaveSociety:', err);
     res.status(500).json({ error_message: "Failed to leave society" });
   }
 };

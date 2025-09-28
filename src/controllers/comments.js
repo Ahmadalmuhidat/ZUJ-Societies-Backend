@@ -20,7 +20,7 @@ exports.createComment = async (req, res) => {
 
     // Send notification to post author
     try {
-      const post = await Post.findById(req.body.post_id);
+      const post = await Post.findOne({ ID: req.body.post_id });
       if (post && post.User.toString() !== userId) { // Don't notify if user comments on their own post
         const user = await User.findOne({ ID: userId }).select('Name Photo');
         

@@ -134,8 +134,28 @@ exports.createPost = async (req, res) => {
 
 exports.deletePost = async (req, res) => {
   try {
-    const { post_id, token } = req.query;
-    const userId = jsonWebToken.verify_token(token)['id'];
+    const { post_id } = req.query;
+    // Try to get token from query params first, then from Authorization header
+    let token = req.query.token;
+    if (!token && req.headers.authorization) {
+      token = req.headers.authorization.replace('Bearer ', '');
+    }
+
+    if (!token) {
+      return res.status(401).json({ error_message: "Token is required" });
+    }
+
+    let userId;
+    try {
+      const userData = jsonWebToken.verify_token(token);
+      userId = userData['id'];
+    } catch (error) {
+      return res.status(401).json({ error_message: "Invalid or expired token" });
+    }
+
+    if (!userId) {
+      return res.status(401).json({ error_message: "Invalid token payload" });
+    }
 
     const post = await Post.findOne({ ID: post_id });
     if (!post) {
